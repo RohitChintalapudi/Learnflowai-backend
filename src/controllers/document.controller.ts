@@ -34,7 +34,7 @@ export class DocumentController {
 
   async getDocumentById(req: Request, res: Response): Promise<void> {
     try {
-      const { documentId } = req.params;
+      const documentId = req.params.documentId as string;
       const document = await documentService.getDocumentById(documentId);
 
       if (!document) {
@@ -51,7 +51,7 @@ export class DocumentController {
 
   async deleteDocument(req: Request, res: Response): Promise<void> {
     try {
-      const { documentId } = req.params;
+      const documentId = req.params.documentId as string;
       const result = await documentService.deleteDocument(documentId);
       res.status(200).json(result);
     } catch (error) {

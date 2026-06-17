@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import mammoth from "mammoth";
-import { parseOfficeAsync } from "officeparser";
+import { parseOffice } from "officeparser";
 import { PDFParse } from "pdf-parse";
 
 export interface ExtractResponse {
@@ -71,7 +71,7 @@ export class DocumentParserService {
 
   private async parsePPTX(filePath: string): Promise<string> {
     // officeparser can parse pptx, docx, xlsx etc.
-    const text = await parseOfficeAsync(filePath);
-    return text;
+    const ast = await parseOffice(filePath);
+    return ast.toText();
   }
 }

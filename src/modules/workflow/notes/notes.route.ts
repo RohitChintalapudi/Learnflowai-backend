@@ -11,4 +11,10 @@ router.post(
   notesController.generateNotes.bind(notesController)
 );
 
+router.delete(
+  "/:id",
+  authMiddleware,
+  notesController.deleteNote.bind(notesController)
+);
+
 export default router;

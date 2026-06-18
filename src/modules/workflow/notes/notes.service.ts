@@ -75,4 +75,30 @@ export class NotesService {
       };
     }
   }
+
+  public async deleteNote(noteId: string, userId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const note = await prisma.generatedNote.findUnique({
+        where: { id: noteId },
+        select: { userId: true },
+      });
+
+      if (!note) {
+        return { success: false, message: "Note not found" };
+      }
+
+      if (note.userId !== userId) {
+        return { success: false, message: "Unauthorized to delete this note" };
+      }
+
+      await prisma.generatedNote.delete({
+        where: { id: noteId },
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error deleting note:", error);
+      return { success: false, message: "An error occurred while deleting the note" };
+    }
+  }
 }

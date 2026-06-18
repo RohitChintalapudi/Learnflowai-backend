@@ -54,4 +54,35 @@ export class NotesController {
       });
     }
   }
+
+  public async deleteNote(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+
+      if (!req.user || !req.user.id) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+
+      const userId = req.user.id;
+
+      const result = await notesService.deleteNote(id, userId);
+
+      if (!result.success) {
+        const statusCode = result.message?.includes("Unauthorized") ? 403 : 
+                           result.message?.includes("not found") ? 404 : 400;
+                           
+        res.status(statusCode).json(result);
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("NotesController delete error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
 }

@@ -11,6 +11,7 @@ import explanationRoute from "./modules/workflow/explanation/explanation.route";
 import interviewQuestionsRoute from "./modules/workflow/interview-questions/interviewQuestions.route";
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import notesRoute from "./modules/workflow/notes/notes.route";
+import dashboardRoute from "./modules/dashboard/dashboard.route";
 import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 
@@ -40,6 +41,7 @@ app.use("/api/workflow/explanation", explanationRoute);
 app.use("/api/workflow/interview-questions", interviewQuestionsRoute);
 app.use("/api/workflow/quiz", quizRoute);
 app.use("/api/workflow/notes", notesRoute);
+app.use("/api/dashboard", dashboardRoute);
 
 app.use(notFound);
 app.use(errorHandler);

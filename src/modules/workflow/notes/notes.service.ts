@@ -1,0 +1,78 @@
+import { prisma } from "../../../database";
+import { runNotesWorkflow } from "./notes.graph";
+import { NotesResponse } from "./notes.types";
+
+export class NotesService {
+  public async generateNotes(
+    documentId: string,
+    highlightedText: string,
+    userId: string
+  ): Promise<NotesResponse> {
+    try {
+      const startTime = Date.now();
+
+      // 1. Verify document exists and check ownership
+      const document = await prisma.document.findUnique({
+        where: { id: documentId },
+        select: { id: true, uploadedBy: true },
+      });
+
+      if (!document) {
+        return { success: false, message: "Document not found" };
+      }
+
+      // If document was uploaded anonymously (uploadedBy is null), allow access.
+      // Otherwise, ensure the authenticated user owns it.
+      if (document.uploadedBy && document.uploadedBy !== userId) {
+        return { success: false, message: "Unauthorized document access" };
+      }
+
+      // 2. Run LangGraph workflow
+      const result = await runNotesWorkflow(documentId, highlightedText, userId);
+
+      const workflowTime = Date.now() - startTime;
+
+      if (!result.notes) {
+        return { success: false, message: "Parsing failure: Unable to generate structured notes." };
+      }
+
+      // 3. Save generated notes to DB
+      await prisma.generatedNote.create({
+        data: {
+          userId,
+          documentId,
+          highlightedText,
+          title: result.notes.title,
+          notes: result.notes as any, // Store as JSON
+        }
+      });
+
+      // 4. Analytics Event
+      const analyticsEvent = {
+        event: "AI_NOTES_GENERATED",
+        userId,
+        documentId,
+        highlightedText,
+        timestamp: new Date().toISOString(),
+        llmDuration: workflowTime,
+        totalDuration: workflowTime,
+        retrievedChunks: result.retrievedChunks.length,
+      };
+      
+      // Log for analytics
+      console.log(JSON.stringify(analyticsEvent));
+
+      return {
+        success: true,
+        notes: result.notes,
+        retrievedChunks: result.retrievedChunks.length,
+      };
+    } catch (error: any) {
+      console.error("Error generating notes:", error);
+      return {
+        success: false,
+        message: error?.message || "An error occurred while generating the notes",
+      };
+    }
+  }
+}

@@ -22,6 +22,7 @@ model User {
   explanations          Explanation[]
   interviewQuestionSets InterviewQuestionSet[]
   quizSets              QuizSet[]
+  generatedNotes        GeneratedNote[]
 
   @@map("users")
 }
@@ -87,6 +88,7 @@ model Document {
   explanations          Explanation[]
   interviewQuestionSets InterviewQuestionSet[]
   quizSets              QuizSet[]
+  generatedNotes        GeneratedNote[]
 
   @@map("documents")
 }
@@ -144,4 +146,19 @@ model QuizSet {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("quiz_sets")
+}
+
+model GeneratedNote {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  title           String
+  notes           Json
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_notes")
 }

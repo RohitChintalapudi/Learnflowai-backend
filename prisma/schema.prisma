@@ -19,7 +19,8 @@ model User {
 
   sessions      Session[]
   accounts      Account[]
-  explanations  Explanation[]
+  explanations          Explanation[]
+  interviewQuestionSets InterviewQuestionSet[]
 
   @@map("users")
 }
@@ -82,7 +83,8 @@ model Document {
   updatedAt  DateTime @updatedAt
 
   chunks       Chunk[]
-  explanations Explanation[]
+  explanations          Explanation[]
+  interviewQuestionSets InterviewQuestionSet[]
 
   @@map("documents")
 }
@@ -112,4 +114,18 @@ model Explanation {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("explanations")
+}
+
+model InterviewQuestionSet {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  questionsJson   Json     // Stores the generated { basic: [], intermediate: [], advanced: [] }
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("interview_question_sets")
 }

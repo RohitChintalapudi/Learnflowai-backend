@@ -8,6 +8,7 @@ import { registerSwaggerDocs } from "./docs/swagger";
 import { healthRouter } from "./features/health/routes/health-routes";
 import documentRouter from "./routes/document.routes";
 import explanationRoute from "./modules/workflow/explanation/explanation.route";
+import interviewQuestionsRoute from "./modules/workflow/interview-questions/interviewQuestions.route";
 import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 
@@ -34,6 +35,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/health", healthRouter);
 app.use("/api/documents", documentRouter);
 app.use("/api/workflow/explanation", explanationRoute);
+app.use("/api/workflow/interview-questions", interviewQuestionsRoute);
 
 app.use(notFound);
 app.use(errorHandler);

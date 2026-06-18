@@ -5,13 +5,13 @@ export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const session = await auth.api.getSession({
-      headers: req.headers,
+      headers: new Headers(req.headers as Record<string, string>),
     });
 
-    if (!session || !session.user) {
+    if (!session) {
       res.status(401).json({ success: false, message: "Unauthorized" });
       return;
     }

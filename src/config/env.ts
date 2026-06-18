@@ -9,6 +9,10 @@ const envSchema = z.object({
 	DATABASE_URL: z.string().min(1),
 	BETTER_AUTH_SECRET: z.string().min(1),
 	BETTER_AUTH_URL: z.string().url(),
+	LANGFUSE_SECRET_KEY: z.string().optional(),
+	LANGFUSE_PUBLIC_KEY: z.string().optional(),
+	LANGFUSE_BASE_URL: z.string().url().optional(),
+	GROQ_API: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

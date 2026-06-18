@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import { prisma } from "../database/prisma";
 import { StorageService } from "./storage.service";
 import { DocumentParserService } from "./documentParser.service";
@@ -21,55 +22,67 @@ export class DocumentService {
   }
 
   async processAndStoreDocument(file: Express.Multer.File, userId?: string) {
-    // 1. Extract text and metadata
-    const parsedData = await this.documentParserService.extractText(file);
-    
-    // 2. Upload/Store the physical file
-    const fileUrl = await this.storageService.uploadFile(file);
+    try {
+      // 1. Extract text and metadata
+      const parsedData = await this.documentParserService.extractText(file);
+      
+      // 2. Save the file URL using StorageService so the frontend can view it
+      const fileUrl = await this.storageService.uploadFile(file);
 
-    // 3. Create document record in database
-    const document = await prisma.document.create({
-      data: {
-        title: file.originalname,
-        fileName: file.filename,
-        fileType: parsedData.fileType,
-        fileUrl: fileUrl,
-        totalPages: parsedData.totalPages,
-        uploadedBy: userId || null,
+      // 3. Create document record in database
+      const document = await prisma.document.create({
+        data: {
+          title: file.originalname,
+          fileName: file.filename,
+          fileType: parsedData.fileType,
+          fileUrl: fileUrl,
+          totalPages: parsedData.totalPages,
+          uploadedBy: userId || null,
+        }
+      });
+
+      // 4. Chunk the extracted text
+      const chunksInfo = await this.chunkService.createChunks(parsedData.text);
+
+      // 5. Generate embeddings and store vectors
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < chunksInfo.length; i += BATCH_SIZE) {
+        const batchChunks = chunksInfo.slice(i, i + BATCH_SIZE);
+        const textsToEmbed = batchChunks.map(c => c.content);
+        
+        const embeddings = await this.embeddingService.generateEmbeddings(textsToEmbed);
+        
+        const chunksWithEmbeddings = batchChunks.map((chunk, index) => ({
+          ...chunk,
+          embedding: embeddings[index]
+        }));
+
+        await this.vectorService.saveVectors(document.id, chunksWithEmbeddings);
       }
-    });
 
-    // 4. Chunk the extracted text
-    const chunksInfo = await this.chunkService.createChunks(parsedData.text);
-
-    // 5. Generate embeddings and store vectors
-    // To avoid memory issues with large files, we'll process chunks in small batches
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < chunksInfo.length; i += BATCH_SIZE) {
-      const batchChunks = chunksInfo.slice(i, i + BATCH_SIZE);
-      const textsToEmbed = batchChunks.map(c => c.content);
-      
-      const embeddings = await this.embeddingService.generateEmbeddings(textsToEmbed);
-      
-      const chunksWithEmbeddings = batchChunks.map((chunk, index) => ({
-        ...chunk,
-        embedding: embeddings[index]
-      }));
-
-      await this.vectorService.saveVectors(document.id, chunksWithEmbeddings);
+      return {
+        success: true,
+        documentId: document.id,
+        title: document.title,
+        fileType: document.fileType,
+        totalChunks: chunksInfo.length
+      };
+    } catch (error) {
+      // Cleanup the temporary file only if processing failed
+      if (file.path) {
+        await fs.unlink(file.path).catch((err) => 
+          console.error(`Failed to delete temporary file ${file.path}:`, err)
+        );
+      }
+      throw error;
     }
-
-    return {
-      success: true,
-      documentId: document.id,
-      title: document.title,
-      fileType: document.fileType,
-      totalChunks: chunksInfo.length
-    };
   }
 
-  async getDocuments() {
+  async getDocuments(userId: string) {
     return prisma.document.findMany({
+      where: {
+        uploadedBy: userId,
+      },
       select: {
         id: true,
         title: true,

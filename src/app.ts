@@ -1,11 +1,13 @@
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
+import path from "node:path";
 import express, { type Express } from "express";
 import { auth } from "./auth";
 import { env } from "./config/env";
 import { registerSwaggerDocs } from "./docs/swagger";
 import { healthRouter } from "./features/health/routes/health-routes";
 import documentRouter from "./routes/document.routes";
+import explanationRoute from "./modules/workflow/explanation/explanation.route";
 import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 
@@ -26,8 +28,12 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from the uploads directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 app.use("/api/health", healthRouter);
 app.use("/api/documents", documentRouter);
+app.use("/api/workflow/explanation", explanationRoute);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -11,8 +11,13 @@ export class DocumentController {
         return;
       }
 
-      // In a real app, you would extract the user ID from req.user/session
-      const userId = undefined;
+      // Extract the user ID from the authenticated session
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
 
       const result = await documentService.processAndStoreDocument(req.file, userId);
       res.status(200).json(result);
@@ -24,7 +29,13 @@ export class DocumentController {
 
   async getDocuments(req: Request, res: Response): Promise<void> {
     try {
-      const documents = await documentService.getDocuments();
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const documents = await documentService.getDocuments(userId);
       res.status(200).json(documents);
     } catch (error) {
       console.error("Error in getDocuments:", error);

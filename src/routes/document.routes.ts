@@ -1,9 +1,13 @@
 import { Router } from "express";
 import { DocumentController } from "../controllers/document.controller";
 import { uploadMiddleware } from "../middlewares/upload.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router: Router = Router();
 const documentController = new DocumentController();
+
+// Apply auth middleware to all document routes
+router.use(authMiddleware);
 
 // Document ingestion routes
 router.post(

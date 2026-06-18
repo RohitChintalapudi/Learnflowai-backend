@@ -317,6 +317,96 @@ export const openApiDocument: OpenApiDocument = {
 				},
 			},
 		},
+		"/api/workflow/quiz": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Quiz",
+				description: "Generates a comprehensive educational quiz (MCQs, True/False, and Short Answer) based on the highlighted text using the document context (RAG).",
+				operationId: "generateQuiz",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText"],
+								properties: {
+									documentId: {
+										type: "string",
+										description: "The ID of the source document",
+									},
+									highlightedText: {
+										type: "string",
+										description: "The text highlighted by the user (max 5000 chars)",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "Successfully generated the quiz.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean" },
+										quiz: {
+											type: "object",
+											properties: {
+												mcqs: { 
+													type: "array", 
+													items: { 
+														type: "object",
+														properties: {
+															question: { type: "string" },
+															options: { type: "array", items: { type: "string" } },
+															correctAnswer: { type: "string" }
+														}
+													} 
+												},
+												trueFalse: { 
+													type: "array", 
+													items: { 
+														type: "object",
+														properties: {
+															question: { type: "string" },
+															answer: { type: "boolean" }
+														}
+													} 
+												},
+												shortAnswer: { 
+													type: "array", 
+													items: { 
+														type: "object",
+														properties: {
+															question: { type: "string" },
+															expectedAnswer: { type: "string" }
+														}
+													} 
+												},
+											},
+										},
+										retrievedChunks: { type: "integer" },
+									},
+								},
+							},
+						},
+					},
+					"400": {
+						description: "Validation error on the request body.",
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+					"403": {
+						description: "Unauthorized document access.",
+					},
+				},
+			},
+		},
 	},
 	components: {
 		schemas: {

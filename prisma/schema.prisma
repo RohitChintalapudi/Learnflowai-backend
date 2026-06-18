@@ -21,6 +21,7 @@ model User {
   accounts      Account[]
   explanations          Explanation[]
   interviewQuestionSets InterviewQuestionSet[]
+  quizSets              QuizSet[]
 
   @@map("users")
 }
@@ -85,6 +86,7 @@ model Document {
   chunks       Chunk[]
   explanations          Explanation[]
   interviewQuestionSets InterviewQuestionSet[]
+  quizSets              QuizSet[]
 
   @@map("documents")
 }
@@ -128,4 +130,18 @@ model InterviewQuestionSet {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("interview_question_sets")
+}
+
+model QuizSet {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  quizJson        Json     // Stores the generated { mcqs: [], trueFalse: [], shortAnswer: [] }
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_sets")
 }

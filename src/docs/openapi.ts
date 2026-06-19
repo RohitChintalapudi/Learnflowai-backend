@@ -49,6 +49,22 @@ export const openApiDocument: OpenApiDocument = {
 			name: "AI Workflows",
 			description: "AI generation and workflow endpoints.",
 		},
+		{
+			name: "Notes",
+			description: "Notes generation and management endpoints.",
+		},
+		{
+			name: "Dashboard",
+			description: "User dashboard and summary endpoints.",
+		},
+		{
+			name: "Quiz Dashboard",
+			description: "Quiz history and statistics endpoints.",
+		},
+		{
+			name: "Profile",
+			description: "User profile and avatar endpoints.",
+		},
 	],
 	paths: {
 		"/api/health": {
@@ -406,6 +422,170 @@ export const openApiDocument: OpenApiDocument = {
 					},
 				},
 			},
+		},
+		"/api/workflow/notes": {
+			post: {
+				tags: ["Notes"],
+				summary: "Generate AI Notes",
+				description: "Generates study notes based on highlighted text using the document context.",
+				operationId: "generateNotes",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText"],
+								properties: {
+									documentId: { type: "string" },
+									highlightedText: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated notes." } }
+			},
+			get: {
+				tags: ["Notes"],
+				summary: "Get All Notes",
+				description: "Retrieves all saved notes for the authenticated user.",
+				operationId: "getNotes",
+				responses: { "200": { description: "Successfully retrieved notes." } }
+			}
+		},
+		"/api/workflow/notes/{id}": {
+			delete: {
+				tags: ["Notes"],
+				summary: "Delete a Note",
+				description: "Deletes a specific note by ID.",
+				operationId: "deleteNote",
+				parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+				responses: { "200": { description: "Successfully deleted note." } }
+			}
+		},
+		"/api/dashboard/summary": {
+			get: {
+				tags: ["Dashboard"],
+				summary: "Get Dashboard Summary",
+				description: "Retrieves summary statistics for the user dashboard.",
+				operationId: "getDashboardSummary",
+				responses: { "200": { description: "Successfully retrieved summary." } }
+			}
+		},
+		"/api/quizzes": {
+			get: {
+				tags: ["Quiz Dashboard"],
+				summary: "Get All Quizzes",
+				description: "Retrieves all past quizzes for the user.",
+				operationId: "getAllQuizzes",
+				responses: { "200": { description: "Successfully retrieved quizzes." } }
+			}
+		},
+		"/api/quizzes/recent": {
+			get: {
+				tags: ["Quiz Dashboard"],
+				summary: "Get Recent Quizzes",
+				description: "Retrieves the most recent quizzes for the user.",
+				operationId: "getRecentQuizzes",
+				responses: { "200": { description: "Successfully retrieved recent quizzes." } }
+			}
+		},
+		"/api/quizzes/stats": {
+			get: {
+				tags: ["Quiz Dashboard"],
+				summary: "Get Quiz Stats",
+				description: "Retrieves aggregated quiz statistics for the user.",
+				operationId: "getQuizStats",
+				responses: { "200": { description: "Successfully retrieved quiz stats." } }
+			}
+		},
+		"/api/quizzes/{quizId}": {
+			get: {
+				tags: ["Quiz Dashboard"],
+				summary: "Get a specific Quiz",
+				description: "Retrieves details of a specific quiz.",
+				operationId: "getSingleQuiz",
+				parameters: [{ name: "quizId", in: "path", required: true, schema: { type: "string" } }],
+				responses: { "200": { description: "Successfully retrieved quiz." } }
+			},
+			delete: {
+				tags: ["Quiz Dashboard"],
+				summary: "Delete a Quiz",
+				description: "Deletes a specific quiz.",
+				operationId: "deleteQuiz",
+				parameters: [{ name: "quizId", in: "path", required: true, schema: { type: "string" } }],
+				responses: { "200": { description: "Successfully deleted quiz." } }
+			}
+		},
+		"/api/profile": {
+			get: {
+				tags: ["Profile"],
+				summary: "Get User Profile",
+				description: "Retrieves the authenticated user's profile.",
+				operationId: "getProfile",
+				responses: { "200": { description: "Successfully retrieved profile." } }
+			},
+			patch: {
+				tags: ["Profile"],
+				summary: "Update User Profile",
+				description: "Updates the authenticated user's profile (name, bio, learningGoals).",
+				operationId: "updateProfile",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								properties: {
+									name: { type: "string" },
+									bio: { type: "string" },
+									learningGoals: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully updated profile." } }
+			}
+		},
+		"/api/profile/stats": {
+			get: {
+				tags: ["Profile"],
+				summary: "Get User Stats",
+				description: "Retrieves user statistics.",
+				operationId: "getProfileStats",
+				responses: { "200": { description: "Successfully retrieved stats." } }
+			}
+		},
+		"/api/profile/avatar": {
+			post: {
+				tags: ["Profile"],
+				summary: "Upload Avatar",
+				description: "Uploads a new avatar image for the user.",
+				operationId: "uploadAvatar",
+				requestBody: {
+					required: true,
+					content: {
+						"multipart/form-data": {
+							schema: {
+								type: "object",
+								properties: {
+									avatar: { type: "string", format: "binary" }
+								}
+							}
+						}
+					}
+				},
+				responses: { "200": { description: "Successfully uploaded avatar." } }
+			},
+			delete: {
+				tags: ["Profile"],
+				summary: "Delete Avatar",
+				description: "Deletes the user's avatar image.",
+				operationId: "deleteAvatar",
+				responses: { "200": { description: "Successfully deleted avatar." } }
+			}
 		},
 	},
 	components: {

@@ -15,4 +15,7 @@ export const auth = betterAuth({
 		enabled: true,
 	},
 	plugins: [openAPI()],
+	logger: {
+		level: "debug",
+	},
 });

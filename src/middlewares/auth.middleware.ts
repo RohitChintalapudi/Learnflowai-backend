@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { auth } from "../auth/auth";
+import { fromNodeHeaders } from "better-auth/node";
 
 export const authMiddleware = async (
   req: Request,
@@ -8,7 +9,7 @@ export const authMiddleware = async (
 ): Promise<void> => {
   try {
     const session = await auth.api.getSession({
-      headers: new Headers(req.headers as Record<string, string>),
+      headers: fromNodeHeaders(req.headers),
     });
 
     if (!session) {

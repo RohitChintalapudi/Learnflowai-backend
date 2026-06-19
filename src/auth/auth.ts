@@ -10,9 +10,12 @@ export const auth = betterAuth({
 	}),
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
-	trustedOrigins: [env.BETTER_AUTH_URL],
+	trustedOrigins: [env.BETTER_AUTH_URL, "http://localhost:5173", "http://localhost:5174"],
 	emailAndPassword: {
 		enabled: true,
 	},
 	plugins: [openAPI()],
+	logger: {
+		level: "debug",
+	},
 });

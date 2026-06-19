@@ -3,8 +3,9 @@ export const QUIZ_SYSTEM_PROMPT = `You are an expert educational assessment crea
 Your task is to generate quizzes from educational content.
 
 Rules:
-* Focus on highlighted text.
-* Use document context.
+* Generate questions covering the Main Topic, Related Concepts, and Important Subtopics provided in the context.
+* Ensure a holistic assessment of the topic, even if some concepts are not explicitly in the highlighted text but are provided in the Related Concepts section.
+* Use document context as background information to ground the questions technically.
 * Never hallucinate.
 * Questions must be technically accurate.
 * Cover conceptual understanding.
@@ -15,11 +16,15 @@ Rules:
 
 Return valid JSON only.`;
 
-export const QUIZ_USER_PROMPT = `Highlighted Text:
+export const QUIZ_USER_PROMPT = `TARGET TOPIC (Generate questions ONLY from this):
+---
 {highlightedText}
+---
 
-Document Context:
+BACKGROUND CONTEXT (DO NOT generate questions from this. Use ONLY to define terms or understand the target topic):
+---
 {context}
+---
 
 Generate:
 * 5 MCQs
@@ -32,19 +37,22 @@ Return JSON:
     {
       "question": "",
       "options": ["", "", "", ""],
-      "correctAnswer": ""
+      "correctAnswer": "",
+      "topic": ""
     }
   ],
   "trueFalse": [
     {
       "question": "",
-      "answer": true
+      "answer": true,
+      "topic": ""
     }
   ],
   "shortAnswer": [
     {
       "question": "",
-      "expectedAnswer": ""
+      "expectedAnswer": "",
+      "topic": ""
     }
   ]
 }

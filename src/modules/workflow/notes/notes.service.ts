@@ -37,7 +37,7 @@ export class NotesService {
       }
 
       // 3. Save generated notes to DB
-      await prisma.generatedNote.create({
+      const generatedNote = await prisma.generatedNote.create({
         data: {
           userId,
           documentId,
@@ -66,6 +66,7 @@ export class NotesService {
         success: true,
         notes: result.notes,
         retrievedChunks: result.retrievedChunks.length,
+        noteId: generatedNote.id,
       };
     } catch (error: any) {
       console.error("Error generating notes:", error);
@@ -99,6 +100,19 @@ export class NotesService {
     } catch (error: any) {
       console.error("Error deleting note:", error);
       return { success: false, message: "An error occurred while deleting the note" };
+    }
+  }
+
+  public async getNotes(userId: string) {
+    try {
+      const notes = await prisma.generatedNote.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      return { success: true, notes };
+    } catch (error: any) {
+      console.error("Error fetching notes:", error);
+      return { success: false, message: "An error occurred while fetching notes" };
     }
   }
 }

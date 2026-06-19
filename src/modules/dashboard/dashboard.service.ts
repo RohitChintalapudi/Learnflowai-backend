@@ -7,7 +7,7 @@ export class DashboardService {
       prisma.document.count({ where: { uploadedBy: userId } }),
       prisma.explanation.count({ where: { userId } }),
       prisma.generatedNote.count({ where: { userId } }),
-      prisma.quizSet.count({ where: { userId } })
+      prisma.generatedQuiz.count({ where: { userId } })
     ]);
 
     const recentDocuments = await prisma.document.findMany({
@@ -38,7 +38,7 @@ export class DashboardService {
         take: 5,
         include: { document: { select: { title: true } } }
       }),
-      prisma.quizSet.findMany({
+      prisma.generatedQuiz.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         take: 5,

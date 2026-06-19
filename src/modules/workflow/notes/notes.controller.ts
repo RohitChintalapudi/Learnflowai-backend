@@ -85,4 +85,29 @@ export class NotesController {
       });
     }
   }
+
+  public async getNotes(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user || !req.user.id) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+
+      const userId = req.user.id;
+      const result = await notesService.getNotes(userId);
+
+      if (!result.success) {
+        res.status(400).json(result);
+        return;
+      }
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("NotesController getNotes error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
 }

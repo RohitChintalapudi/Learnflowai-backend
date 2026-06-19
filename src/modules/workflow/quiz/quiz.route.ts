@@ -11,4 +11,16 @@ router.post(
   quizController.generateQuiz.bind(quizController)
 );
 
+router.get(
+  "/",
+  authMiddleware,
+  quizController.getQuizzes.bind(quizController)
+);
+
+router.patch(
+  "/:id/submit",
+  authMiddleware,
+  quizController.submitQuiz.bind(quizController)
+);
+
 export default router;

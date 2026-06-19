@@ -14,7 +14,7 @@ export class QuizService {
       // 1. Verify document exists and check ownership
       const document = await prisma.document.findUnique({
         where: { id: documentId },
-        select: { id: true, uploadedBy: true },
+        select: { id: true, uploadedBy: true, title: true },
       });
 
       if (!document) {
@@ -33,12 +33,28 @@ export class QuizService {
       const workflowTime = Date.now() - startTime;
 
       // 3. Save generated quiz to DB
-      await prisma.quizSet.create({
+      const quizSet = await prisma.quizSet.create({
         data: {
           userId,
           documentId,
           highlightedText,
           quizJson: result.quiz,
+        }
+      });
+
+      const totalQuestions = 
+        (Array.isArray(result.quiz?.mcqs) ? result.quiz.mcqs.length : 0) +
+        (Array.isArray(result.quiz?.trueFalse) ? result.quiz.trueFalse.length : 0) +
+        (Array.isArray(result.quiz?.shortAnswer) ? result.quiz.shortAnswer.length : 0);
+
+      const generatedQuiz = await prisma.generatedQuiz.create({
+        data: {
+          userId,
+          documentId,
+          title: document.title,
+          highlightedText,
+          quizData: result.quiz,
+          totalQuestions,
         }
       });
 
@@ -56,6 +72,7 @@ export class QuizService {
 
       return {
         success: true,
+        id: quizSet.id,
         quiz: result.quiz,
         retrievedChunks: result.retrievedChunks.length,
       };
@@ -65,6 +82,57 @@ export class QuizService {
         success: false,
         message: "An error occurred while generating the quiz",
       };
+    }
+  }
+
+  public async getQuizzes(userId: string) {
+    try {
+      const quizzes = await prisma.quizSet.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          document: {
+            select: { title: true }
+          }
+        }
+      });
+      return { success: true, data: quizzes };
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+      return { success: false, message: "Failed to fetch quizzes" };
+    }
+  }
+
+  public async submitQuiz(
+    quizId: string, 
+    userId: string, 
+    score: number, 
+    totalQuestions: number, 
+    topicsToImprove: string[]
+  ) {
+    try {
+      const quiz = await prisma.quizSet.findUnique({ where: { id: quizId } });
+      if (!quiz) {
+        return { success: false, message: "Quiz not found" };
+      }
+      if (quiz.userId !== userId) {
+        return { success: false, message: "Unauthorized access" };
+      }
+
+      const updatedQuiz = await prisma.quizSet.update({
+        where: { id: quizId },
+        data: {
+          score,
+          totalQuestions,
+          status: "COMPLETED",
+          topicsToImprove: topicsToImprove as any,
+        }
+      });
+
+      return { success: true, data: updatedQuiz };
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+      return { success: false, message: "Failed to submit quiz" };
     }
   }
 }

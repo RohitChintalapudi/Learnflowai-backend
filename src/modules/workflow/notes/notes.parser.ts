@@ -19,7 +19,8 @@ export const parseNotesResponse = (jsonString: string): GeneratedNotes | null =>
       typeof parsed.title === "string" &&
       typeof parsed.summary === "string" &&
       Array.isArray(parsed.keyPoints) &&
-      Array.isArray(parsed.importantConcepts) &&
+      Array.isArray(parsed.relatedConcepts) &&
+      Array.isArray(parsed.importantSubtopics) &&
       Array.isArray(parsed.examTips) &&
       Array.isArray(parsed.revisionNotes)
     ) {

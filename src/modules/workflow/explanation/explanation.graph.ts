@@ -9,6 +9,8 @@ import {
   EXPLANATION_USER_PROMPT_TEMPLATE,
 } from "./explanation.prompts";
 import { env } from "../../../config/env";
+import { TopicExpansionState } from "../shared/topicExpansion.types";
+import { topicDetectionNode, conceptExpansionNode } from "../shared/topicExpansion.nodes";
 
 const langfuse = new Langfuse({
   publicKey: env.LANGFUSE_PUBLIC_KEY,
@@ -17,6 +19,7 @@ const langfuse = new Langfuse({
 });
 
 const GraphState = Annotation.Root({
+  ...TopicExpansionState,
   documentId: Annotation<string>(),
   highlightedText: Annotation<string>(),
   retrievedChunks: Annotation<any[]>(),
@@ -26,18 +29,19 @@ const GraphState = Annotation.Root({
 });
 
 const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
-  const { highlightedText, documentId, traceId } = state;
+  const { highlightedText, documentId, traceId, mainTopic, relatedConcepts, subtopics } = state;
 
   const trace = langfuse.trace({ id: traceId });
   const span = trace.span({
     name: "retrieve-chunks",
-    input: { highlightedText, documentId },
+    input: { highlightedText, mainTopic, relatedConcepts, subtopics, documentId },
   });
 
   const startTime = Date.now();
   
-  // 1. Generate embedding for highlighted text
-  const embedding = await generateEmbedding(highlightedText);
+  // 1. Generate embedding for expanded query
+  const query = `${highlightedText} ${mainTopic || ""} ${(relatedConcepts || []).join(" ")} ${(subtopics || []).join(" ")}`;
+  const embedding = await generateEmbedding(query);
   
   // 2-5. Fetch and sort top chunks
   const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
@@ -53,8 +57,23 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 };
 
 const buildContextNode = async (state: typeof GraphState.State) => {
-  const { retrievedChunks } = state;
+  const { retrievedChunks, mainTopic, relatedConcepts, subtopics, prerequisites } = state;
   let context = "";
+
+  if (mainTopic) {
+    context += `Main Topic:\n${mainTopic}\n\n`;
+  }
+  if (relatedConcepts && relatedConcepts.length > 0) {
+    context += `Related Concepts:\n${relatedConcepts.map((c: string) => "- " + c).join("\n")}\n\n`;
+  }
+  if (subtopics && subtopics.length > 0) {
+    context += `Subtopics:\n${subtopics.map((s: string) => "- " + s).join("\n")}\n\n`;
+  }
+  if (prerequisites && prerequisites.length > 0) {
+    context += `Prerequisites:\n${prerequisites.map((p: string) => "- " + p).join("\n")}\n\n`;
+  }
+
+  context += "Document Context:\n";
 
   // Target: 4-5 chunks max 3000 tokens (approx)
   // We already limit chunks to 5 in retrieveRelevantChunksNode
@@ -104,10 +123,14 @@ const generateExplanationNode = async (state: typeof GraphState.State) => {
 };
 
 const workflow = new StateGraph(GraphState)
+  .addNode("TopicDetection", topicDetectionNode)
+  .addNode("ConceptExpansion", conceptExpansionNode)
   .addNode("RetrieveRelevantChunks", retrieveRelevantChunksNode)
   .addNode("BuildContext", buildContextNode)
   .addNode("GenerateExplanation", generateExplanationNode)
-  .addEdge(START, "RetrieveRelevantChunks")
+  .addEdge(START, "TopicDetection")
+  .addEdge("TopicDetection", "ConceptExpansion")
+  .addEdge("ConceptExpansion", "RetrieveRelevantChunks")
   .addEdge("RetrieveRelevantChunks", "BuildContext")
   .addEdge("BuildContext", "GenerateExplanation")
   .addEdge("GenerateExplanation", END);
@@ -128,6 +151,12 @@ export const runExplanationWorkflow = async (documentId: string, highlightedText
   const initialState = {
     documentId,
     highlightedText,
+    mainTopic: "",
+    keywords: [],
+    subjectArea: "",
+    relatedConcepts: [],
+    subtopics: [],
+    prerequisites: [],
     retrievedChunks: [],
     context: "",
     explanation: "",

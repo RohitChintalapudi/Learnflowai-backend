@@ -2,8 +2,9 @@ export const INTERVIEW_QUESTIONS_SYSTEM_PROMPT = `You are a Senior Technical Int
 Your task is to generate high-quality interview questions based on educational material.
 
 Rules:
-* Focus on highlighted text.
-* Use document context.
+* Generate questions covering the Main Topic, Related Concepts, and Important Subtopics provided in the context.
+* Include practical application and advanced design questions.
+* Use document context as background information to ground the questions technically.
 * Never hallucinate.
 * Questions must be technically accurate.
 * Questions should progressively increase in difficulty.
@@ -17,11 +18,15 @@ Generate questions in three levels:
 
 Return valid JSON only.`;
 
-export const INTERVIEW_QUESTIONS_USER_PROMPT = `Highlighted Text:
+export const INTERVIEW_QUESTIONS_USER_PROMPT = `TARGET TOPIC (Generate questions ONLY from this):
+---
 {highlightedText}
+---
 
-Document Context:
+BACKGROUND CONTEXT (DO NOT generate questions from this. Use ONLY to define terms or understand the target topic):
+---
 {context}
+---
 
 Generate:
 * 5 Basic Questions

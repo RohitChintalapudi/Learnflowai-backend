@@ -23,6 +23,7 @@ model User {
   interviewQuestionSets InterviewQuestionSet[]
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
+  generatedQuizzes      GeneratedQuiz[]
 
   @@map("users")
 }
@@ -89,6 +90,7 @@ model Document {
   interviewQuestionSets InterviewQuestionSet[]
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
+  generatedQuizzes      GeneratedQuiz[]
 
   @@map("documents")
 }
@@ -140,6 +142,10 @@ model QuizSet {
   documentId      String
   highlightedText String
   quizJson        Json     // Stores the generated { mcqs: [], trueFalse: [], shortAnswer: [] }
+  score           Int?
+  totalQuestions  Int?
+  status          String   @default("PENDING") // "PENDING" | "COMPLETED"
+  topicsToImprove Json?    // Array of string topics
   createdAt       DateTime @default(now())
 
   document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -161,4 +167,25 @@ model GeneratedNote {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_notes")
+}
+
+model GeneratedQuiz {
+  id              String   @id @default(cuid())
+
+  userId          String
+  documentId      String
+
+  title           String
+  highlightedText String
+
+  quizData        Json
+
+  totalQuestions  Int
+
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_quizzes")
 }

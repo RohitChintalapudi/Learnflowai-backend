@@ -11,6 +11,12 @@ router.post(
   notesController.generateNotes.bind(notesController)
 );
 
+router.get(
+  "/",
+  authMiddleware,
+  notesController.getNotes.bind(notesController)
+);
+
 router.delete(
   "/:id",
   authMiddleware,

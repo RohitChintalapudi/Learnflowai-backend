@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { DocumentService } from "../services/document.service";
+import { AnalyticsTracker, AnalyticsEventType } from "../modules/analytics/analytics.tracker";
 
 const documentService = new DocumentService();
 
@@ -20,6 +21,7 @@ export class DocumentController {
       }
 
       const result = await documentService.processAndStoreDocument(req.file, userId);
+      await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.DOCUMENT_UPLOADED, { fileName: req.file.originalname });
       res.status(200).json(result);
     } catch (error) {
       console.error("Error in uploadDocument:", error);
@@ -60,10 +62,47 @@ export class DocumentController {
     }
   }
 
+  async proxyDownload(req: Request, res: Response): Promise<void> {
+    try {
+      const documentId = req.params.documentId as string;
+      const document = await documentService.getDocumentById(documentId);
+
+      if (!document || !document.fileUrl) {
+        res.status(404).json({ error: "Document not found" });
+        return;
+      }
+
+      let fetchUrl = document.fileUrl;
+      if (fetchUrl.startsWith('/')) {
+        const protocol = req.protocol || 'http';
+        const host = req.get('host') || 'localhost:3000';
+        fetchUrl = `${protocol}://${host}${fetchUrl}`;
+      }
+
+      const response = await fetch(fetchUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from cloud (${fetchUrl}): ${response.status} ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get("content-type");
+      if (contentType) {
+        res.setHeader("Content-Type", contentType);
+      }
+      
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error("Error in proxyDownload:", error);
+      require('fs').writeFileSync('proxyDownloadError.log', String(error) + "\n" + (error as any).stack);
+      res.status(500).json({ error: "Internal server error: " + String(error) });
+    }
+  }
+
   async deleteDocument(req: Request, res: Response): Promise<void> {
     try {
       const documentId = req.params.documentId as string;
       const result = await documentService.deleteDocument(documentId);
+      await AnalyticsTracker.trackEvent(req.user!.id, AnalyticsEventType.DOCUMENT_DELETED, { documentId });
       res.status(200).json(result);
     } catch (error) {
       console.error("Error in deleteDocument:", error);

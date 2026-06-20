@@ -1,3 +1,4 @@
+import { AnalyticsTracker, AnalyticsEventType } from "../../analytics/analytics.tracker";
 import { prisma } from "../../../database";
 import { runQuizWorkflow } from "./quiz.graph";
 import { QuizResponse } from "./quiz.types";
@@ -59,16 +60,14 @@ export class QuizService {
       });
 
       // 4. Analytics Event
-      const analyticsEvent = {
-        event: "AI_QUIZ_GENERATED",
-        userId,
-        documentId,
-        highlightedText,
-        timestamp: new Date().toISOString(),
-        workflowTimeMs: workflowTime,
-        retrievedChunks: result.retrievedChunks.length,
-      };
-      console.log(JSON.stringify(analyticsEvent));
+      await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_QUIZ_GENERATED, { documentId });
+      
+      if (result?.mainTopic) {
+        await AnalyticsTracker.trackTopics(userId, [
+          result.mainTopic, 
+          ...(result.relatedConcepts || [])
+        ]);
+      }
 
       return {
         success: true,

@@ -114,7 +114,9 @@ const generateNotesNode = async (state: typeof GraphState.State) => {
       const response = await groqClient.invoke([
         new SystemMessage(NOTES_SYSTEM_PROMPT),
         new HumanMessage(userPrompt),
-      ]);
+      ], {
+        response_format: { type: "json_object" }
+      });
 
       const jsonResponse = response.content as string;
       notes = parseNotesResponse(jsonResponse);

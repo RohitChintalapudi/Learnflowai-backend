@@ -1,3 +1,4 @@
+import { AnalyticsTracker, AnalyticsEventType } from "../../analytics/analytics.tracker";
 import { prisma } from "../../../database";
 import { runExplanationWorkflow } from "./explanation.graph";
 import { ExplanationResponse } from "./explanation.types";
@@ -43,16 +44,14 @@ export class ExplanationService {
       });
 
       // 4. Analytics Event
-      const analyticsEvent = {
-        event: "AI_EXPLANATION_GENERATED",
-        userId,
-        documentId,
-        highlightedText,
-        timestamp: new Date().toISOString(),
-        workflowTimeMs: workflowTime,
-        retrievedChunks: result.retrievedChunks.length,
-      };
-      console.log(JSON.stringify(analyticsEvent));
+      await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_EXPLANATION_GENERATED, { documentId });
+      
+      if (result?.mainTopic) {
+        await AnalyticsTracker.trackTopics(userId, [
+          result.mainTopic, 
+          ...(result.relatedConcepts || [])
+        ]);
+      }
 
       return {
         success: true,

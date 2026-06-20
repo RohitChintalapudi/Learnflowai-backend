@@ -19,6 +19,7 @@ router.post(
 // Metadata retrieval
 router.get("/", documentController.getDocuments.bind(documentController));
 router.get("/:documentId", documentController.getDocumentById.bind(documentController));
+router.get("/:documentId/download", documentController.proxyDownload.bind(documentController));
 
 // Deletion
 router.delete("/:documentId", documentController.deleteDocument.bind(documentController));

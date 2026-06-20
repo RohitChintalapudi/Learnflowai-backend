@@ -1,3 +1,4 @@
+import { AnalyticsTracker, AnalyticsEventType } from "../../analytics/analytics.tracker";
 import { prisma } from "../../../database";
 import { runNotesWorkflow } from "./notes.graph";
 import { NotesResponse } from "./notes.types";
@@ -48,19 +49,14 @@ export class NotesService {
       });
 
       // 4. Analytics Event
-      const analyticsEvent = {
-        event: "AI_NOTES_GENERATED",
-        userId,
-        documentId,
-        highlightedText,
-        timestamp: new Date().toISOString(),
-        llmDuration: workflowTime,
-        totalDuration: workflowTime,
-        retrievedChunks: result.retrievedChunks.length,
-      };
+      await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_NOTES_GENERATED, { documentId });
       
-      // Log for analytics
-      console.log(JSON.stringify(analyticsEvent));
+      if (result?.mainTopic) {
+        await AnalyticsTracker.trackTopics(userId, [
+          result.mainTopic, 
+          ...(result.relatedConcepts || [])
+        ]);
+      }
 
       return {
         success: true,

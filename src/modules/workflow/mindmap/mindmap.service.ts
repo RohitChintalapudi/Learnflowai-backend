@@ -1,3 +1,4 @@
+import { AnalyticsTracker, AnalyticsEventType } from "../../analytics/analytics.tracker";
 import { prisma } from "../../../database";
 import { runMindMapWorkflow } from "./mindmap.graph";
 import { MindMapResponse } from "./mindmap.types";
@@ -44,16 +45,14 @@ export class MindMapService {
       });
 
       // 4. Analytics Event
-      const analyticsEvent = {
-        event: "AI_MINDMAP_GENERATED",
-        userId,
-        documentId,
-        highlightedText,
-        timestamp: new Date().toISOString(),
-        workflowTimeMs: workflowTime,
-        nodeCount: result.mindMapData?.nodes?.length || 0,
-      };
-      console.log(JSON.stringify(analyticsEvent));
+      await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_MINDMAP_GENERATED, { documentId });
+      
+      if (result?.mainTopic) {
+        await AnalyticsTracker.trackTopics(userId, [
+          result.mainTopic, 
+          ...(result.relatedConcepts || [])
+        ]);
+      }
 
       return {
         success: true,

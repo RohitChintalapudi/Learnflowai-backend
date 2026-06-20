@@ -189,6 +189,43 @@ export const openApiDocument: OpenApiDocument = {
 				},
 			},
 		},
+		"/api/documents/{documentId}/download": {
+			get: {
+				tags: ["Documents"],
+				summary: "Download a document",
+				description: "Proxies the download of a document to bypass CORS restrictions.",
+				operationId: "downloadDocument",
+				parameters: [
+					{
+						name: "documentId",
+						in: "path",
+						required: true,
+						schema: {
+							type: "string",
+						},
+					},
+				],
+				responses: {
+					"200": {
+						description: "Successfully retrieved the document file.",
+						content: {
+							"application/octet-stream": {
+								schema: {
+									type: "string",
+									format: "binary",
+								},
+							},
+						},
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+					"404": {
+						description: "Document not found.",
+					},
+				},
+			},
+		},
 		"/api/workflow/explanation": {
 			post: {
 				tags: ["AI Workflows"],
@@ -422,6 +459,79 @@ export const openApiDocument: OpenApiDocument = {
 					},
 				},
 			},
+		},
+		"/api/workflow/mindmap": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Mind Map",
+				description: "Generates a structured mind map based on highlighted text using the document context.",
+				operationId: "generateMindMap",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText"],
+								properties: {
+									documentId: { type: "string" },
+									highlightedText: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated mind map." } }
+			}
+		},
+		"/api/workflow/mindmap/explain": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Explain Mind Map",
+				description: "Explains the logical flow of a previously generated mind map.",
+				operationId: "explainMindMap",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["nodes", "edges"],
+								properties: {
+									nodes: { type: "array" },
+									edges: { type: "array" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated explanation." } }
+			}
+		},
+		"/api/workflow/analogy": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Analogy",
+				description: "Generates an analogy for the highlighted text in a specific theme (gaming, story, education, real-world, sports, movie, eli10).",
+				operationId: "generateAnalogy",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText", "style"],
+								properties: {
+									documentId: { type: "string" },
+									highlightedText: { type: "string" },
+									style: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated analogy." } }
+			}
 		},
 		"/api/workflow/notes": {
 			post: {

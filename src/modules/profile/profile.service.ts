@@ -3,6 +3,7 @@ import { UpdateProfileRequest, UserStats } from "./profile.types";
 import { env } from "../../config/env";
 import path from "node:path";
 import fs from "node:fs";
+import { AnalyticsTracker, AnalyticsEventType } from "../analytics/analytics.tracker";
 
 export class ProfileService {
   public async getProfile(userId: string) {
@@ -57,11 +58,7 @@ export class ProfileService {
     });
 
     // Analytics Tracking
-    console.log(JSON.stringify({
-      event: "PROFILE_UPDATED",
-      userId,
-      timestamp: new Date().toISOString()
-    }));
+    await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.PROFILE_UPDATED, { fields: Object.keys(data) });
 
     return {
       ...updatedUser,
@@ -96,11 +93,7 @@ export class ProfileService {
     }
 
     // Analytics Tracking
-    console.log(JSON.stringify({
-      event: "PROFILE_AVATAR_UPLOADED",
-      userId,
-      timestamp: new Date().toISOString()
-    }));
+    await AnalyticsTracker.trackEvent(userId, "PROFILE_AVATAR_UPLOADED");
 
     return fileUrl;
   }
@@ -130,11 +123,7 @@ export class ProfileService {
     });
 
     // Analytics Tracking
-    console.log(JSON.stringify({
-      event: "PROFILE_AVATAR_DELETED",
-      userId,
-      timestamp: new Date().toISOString()
-    }));
+    await AnalyticsTracker.trackEvent(userId, "PROFILE_AVATAR_DELETED");
 
     return true;
   }

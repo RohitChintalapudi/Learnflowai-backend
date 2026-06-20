@@ -29,6 +29,8 @@ model User {
   generatedQuizzes      GeneratedQuiz[]
   generatedMindMaps     GeneratedMindMap[]
   generatedAnalogies    GeneratedAnalogy[]
+  analyticsEvents       AnalyticsEvent[]
+  userTopics            UserTopic[]
 
   @@map("users")
 }
@@ -228,4 +230,30 @@ model GeneratedAnalogy {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_analogies")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  eventType String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_events")
+}
+
+model UserTopic {
+  id            String   @id @default(cuid())
+  userId        String
+  topic         String
+  frequency     Int      @default(1)
+  lastStudiedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic])
+  @@map("user_topics")
 }

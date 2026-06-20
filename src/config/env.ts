@@ -13,6 +13,9 @@ const envSchema = z.object({
 	LANGFUSE_PUBLIC_KEY: z.string().optional(),
 	LANGFUSE_BASE_URL: z.string().url().optional(),
 	GROQ_API: z.string().optional(),
+	CLOUDINARY_CLOUD_NAME: z.string().min(1),
+	CLOUDINARY_API_KEY: z.string().min(1),
+	CLOUDINARY_API_SECRET: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

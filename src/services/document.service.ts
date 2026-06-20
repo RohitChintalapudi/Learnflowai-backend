@@ -1,20 +1,19 @@
-import fs from "node:fs/promises";
 import { prisma } from "../database/prisma";
-import { StorageService } from "./storage.service";
+import { CloudinaryService } from "../lib/storage/cloudinary.service";
 import { DocumentParserService } from "./documentParser.service";
 import { ChunkService } from "./chunk.service";
 import { EmbeddingService } from "./embedding.service";
 import { VectorService } from "./vector.service";
 
 export class DocumentService {
-  private storageService: StorageService;
+  private cloudinaryService: CloudinaryService;
   private documentParserService: DocumentParserService;
   private chunkService: ChunkService;
   private embeddingService: EmbeddingService;
   private vectorService: VectorService;
 
   constructor() {
-    this.storageService = new StorageService();
+    this.cloudinaryService = new CloudinaryService();
     this.documentParserService = new DocumentParserService();
     this.chunkService = new ChunkService();
     this.embeddingService = new EmbeddingService();
@@ -23,19 +22,29 @@ export class DocumentService {
 
   async processAndStoreDocument(file: Express.Multer.File, userId?: string) {
     try {
-      // 1. Extract text and metadata
+      if (!file.buffer) {
+        throw new Error("File buffer is missing");
+      }
+
+      // 1. Upload to Cloudinary
+      const uploadResult = await this.cloudinaryService.uploadBuffer(
+        file.buffer, 
+        file.originalname,
+        "raw"
+      );
+
+      // 2. Extract text and metadata
       const parsedData = await this.documentParserService.extractText(file);
       
-      // 2. Save the file URL using StorageService so the frontend can view it
-      const fileUrl = await this.storageService.uploadFile(file);
-
       // 3. Create document record in database
       const document = await prisma.document.create({
         data: {
           title: file.originalname,
-          fileName: file.filename,
+          fileName: file.originalname,
           fileType: parsedData.fileType,
-          fileUrl: fileUrl,
+          fileUrl: uploadResult.secureUrl,
+          cloudinaryPublicId: uploadResult.publicId,
+          fileSize: uploadResult.bytes,
           totalPages: parsedData.totalPages,
           uploadedBy: userId || null,
         }
@@ -68,12 +77,7 @@ export class DocumentService {
         totalChunks: chunksInfo.length
       };
     } catch (error) {
-      // Cleanup the temporary file only if processing failed
-      if (file.path) {
-        await fs.unlink(file.path).catch((err) => 
-          console.error(`Failed to delete temporary file ${file.path}:`, err)
-        );
-      }
+      console.error("Failed to process and store document:", error);
       throw error;
     }
   }
@@ -118,9 +122,9 @@ export class DocumentService {
       throw new Error("Document not found");
     }
 
-    // 1. Delete the physical file
-    if (document.fileUrl) {
-      await this.storageService.deleteFile(document.fileUrl);
+    // 1. Delete the cloud asset
+    if (document.cloudinaryPublicId) {
+      await this.cloudinaryService.deleteFile(document.cloudinaryPublicId);
     }
 
     // 2. Vectors and Chunks will be deleted automatically due to Prisma's CASCADE delete

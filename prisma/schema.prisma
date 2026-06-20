@@ -27,6 +27,7 @@ model User {
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
+  generatedMindMaps     GeneratedMindMap[]
 
   @@map("users")
 }
@@ -83,6 +84,8 @@ model Document {
   fileName   String
   fileType   String
   fileUrl    String?
+  cloudinaryPublicId String?
+  fileSize   Int?
   totalPages Int      @default(0)
   uploadedBy String?
   createdAt  DateTime @default(now())
@@ -94,6 +97,7 @@ model Document {
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
+  generatedMindMaps     GeneratedMindMap[]
 
   @@map("documents")
 }
@@ -191,4 +195,19 @@ model GeneratedQuiz {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_quizzes")
+}
+
+model GeneratedMindMap {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  title           String
+  mindMapData     Json     @default("{}")
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_mindmaps")
 }

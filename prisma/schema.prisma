@@ -28,6 +28,7 @@ model User {
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
   generatedMindMaps     GeneratedMindMap[]
+  generatedAnalogies    GeneratedAnalogy[]
 
   @@map("users")
 }
@@ -98,6 +99,7 @@ model Document {
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
   generatedMindMaps     GeneratedMindMap[]
+  generatedAnalogies    GeneratedAnalogy[]
 
   @@map("documents")
 }
@@ -210,4 +212,20 @@ model GeneratedMindMap {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_mindmaps")
+}
+
+model GeneratedAnalogy {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  style           String
+  title           String
+  analogyData     Json
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_analogies")
 }

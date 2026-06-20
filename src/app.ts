@@ -12,6 +12,7 @@ import interviewQuestionsRoute from "./modules/workflow/interview-questions/inte
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import notesRoute from "./modules/workflow/notes/notes.route";
 import mindmapRoute from "./modules/workflow/mindmap/mindmap.route";
+import analogyRoute from "./modules/workflow/analogy/analogy.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import profileRoute from "./modules/profile/profile.route";
@@ -45,6 +46,7 @@ app.use("/api/workflow/interview-questions", interviewQuestionsRoute);
 app.use("/api/workflow/quiz", quizRoute);
 app.use("/api/workflow/notes", notesRoute);
 app.use("/api/workflow/mindmap", mindmapRoute);
+app.use("/api/workflow/analogy", analogyRoute);
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);

@@ -29,6 +29,7 @@ model User {
   generatedQuizzes      GeneratedQuiz[]
   generatedMindMaps     GeneratedMindMap[]
   generatedAnalogies    GeneratedAnalogy[]
+  generatedSimulations  GeneratedSimulation[]
   analyticsEvents       AnalyticsEvent[]
   userTopics            UserTopic[]
 
@@ -102,6 +103,7 @@ model Document {
   generatedQuizzes      GeneratedQuiz[]
   generatedMindMaps     GeneratedMindMap[]
   generatedAnalogies    GeneratedAnalogy[]
+  generatedSimulations  GeneratedSimulation[]
 
   @@map("documents")
 }
@@ -230,6 +232,22 @@ model GeneratedAnalogy {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_analogies")
+}
+
+model GeneratedSimulation {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  simulationType  String   @default("visual-flow")
+  difficulty      String   @default("intermediate")
+  simulationData  Json     @default("{}")
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_simulations")
 }
 
 model AnalyticsEvent {

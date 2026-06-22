@@ -1,138 +1,138 @@
 import { prisma } from "../database/prisma";
 import { CloudinaryService } from "../lib/storage/cloudinary.service";
-import { DocumentParserService } from "./documentParser.service";
 import { ChunkService } from "./chunk.service";
+import { DocumentParserService } from "./documentParser.service";
 import { EmbeddingService } from "./embedding.service";
 import { VectorService } from "./vector.service";
 
 export class DocumentService {
-  private cloudinaryService: CloudinaryService;
-  private documentParserService: DocumentParserService;
-  private chunkService: ChunkService;
-  private embeddingService: EmbeddingService;
-  private vectorService: VectorService;
+	private cloudinaryService: CloudinaryService;
+	private documentParserService: DocumentParserService;
+	private chunkService: ChunkService;
+	private embeddingService: EmbeddingService;
+	private vectorService: VectorService;
 
-  constructor() {
-    this.cloudinaryService = new CloudinaryService();
-    this.documentParserService = new DocumentParserService();
-    this.chunkService = new ChunkService();
-    this.embeddingService = new EmbeddingService();
-    this.vectorService = new VectorService();
-  }
+	constructor() {
+		this.cloudinaryService = new CloudinaryService();
+		this.documentParserService = new DocumentParserService();
+		this.chunkService = new ChunkService();
+		this.embeddingService = new EmbeddingService();
+		this.vectorService = new VectorService();
+	}
 
-  async processAndStoreDocument(file: Express.Multer.File, userId?: string) {
-    try {
-      if (!file.buffer) {
-        throw new Error("File buffer is missing");
-      }
+	async processAndStoreDocument(file: Express.Multer.File, userId?: string) {
+		try {
+			if (!file.buffer) {
+				throw new Error("File buffer is missing");
+			}
 
-      // 1. Upload to Cloudinary
-      const uploadResult = await this.cloudinaryService.uploadBuffer(
-        file.buffer, 
-        file.originalname,
-        "raw"
-      );
+			// 1. Upload to Cloudinary
+			const uploadResult = await this.cloudinaryService.uploadBuffer(
+				file.buffer,
+				file.originalname,
+				"raw",
+			);
 
-      // 2. Extract text and metadata
-      const parsedData = await this.documentParserService.extractText(file);
-      
-      // 3. Create document record in database
-      const document = await prisma.document.create({
-        data: {
-          title: file.originalname,
-          fileName: file.originalname,
-          fileType: parsedData.fileType,
-          fileUrl: uploadResult.secureUrl,
-          cloudinaryPublicId: uploadResult.publicId,
-          fileSize: uploadResult.bytes,
-          totalPages: parsedData.totalPages,
-          uploadedBy: userId || null,
-        }
-      });
+			// 2. Extract text and metadata
+			const parsedData = await this.documentParserService.extractText(file);
 
-      // 4. Chunk the extracted text
-      const chunksInfo = await this.chunkService.createChunks(parsedData.text);
+			// 3. Create document record in database
+			const document = await prisma.document.create({
+				data: {
+					title: file.originalname,
+					fileName: file.originalname,
+					fileType: parsedData.fileType,
+					fileUrl: uploadResult.secureUrl,
+					cloudinaryPublicId: uploadResult.publicId,
+					fileSize: uploadResult.bytes,
+					totalPages: parsedData.totalPages,
+					uploadedBy: userId || null,
+				},
+			});
 
-      // 5. Generate embeddings and store vectors
-      const BATCH_SIZE = 50;
-      for (let i = 0; i < chunksInfo.length; i += BATCH_SIZE) {
-        const batchChunks = chunksInfo.slice(i, i + BATCH_SIZE);
-        const textsToEmbed = batchChunks.map(c => c.content);
-        
-        const embeddings = await this.embeddingService.generateEmbeddings(textsToEmbed);
-        
-        const chunksWithEmbeddings = batchChunks.map((chunk, index) => ({
-          ...chunk,
-          embedding: embeddings[index]
-        }));
+			// 4. Chunk the extracted text
+			const chunksInfo = await this.chunkService.createChunks(parsedData.text);
 
-        await this.vectorService.saveVectors(document.id, chunksWithEmbeddings);
-      }
+			// 5. Generate embeddings and store vectors
+			const BATCH_SIZE = 50;
+			for (let i = 0; i < chunksInfo.length; i += BATCH_SIZE) {
+				const batchChunks = chunksInfo.slice(i, i + BATCH_SIZE);
+				const textsToEmbed = batchChunks.map((c) => c.content);
 
-      return {
-        success: true,
-        documentId: document.id,
-        title: document.title,
-        fileType: document.fileType,
-        totalChunks: chunksInfo.length
-      };
-    } catch (error) {
-      console.error("Failed to process and store document:", error);
-      throw error;
-    }
-  }
+				const embeddings = await this.embeddingService.generateEmbeddings(textsToEmbed);
 
-  async getDocuments(userId: string) {
-    return prisma.document.findMany({
-      where: {
-        uploadedBy: userId,
-      },
-      select: {
-        id: true,
-        title: true,
-        fileType: true,
-        totalPages: true,
-        createdAt: true
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    });
-  }
+				const chunksWithEmbeddings = batchChunks.map((chunk, index) => ({
+					...chunk,
+					embedding: embeddings[index],
+				}));
 
-  async getDocumentById(documentId: string) {
-    return prisma.document.findUnique({
-      where: { id: documentId },
-      select: {
-        id: true,
-        title: true,
-        fileType: true,
-        fileUrl: true,
-        totalPages: true
-      }
-    });
-  }
+				await this.vectorService.saveVectors(document.id, chunksWithEmbeddings);
+			}
 
-  async deleteDocument(documentId: string) {
-    const document = await prisma.document.findUnique({
-      where: { id: documentId }
-    });
+			return {
+				success: true,
+				documentId: document.id,
+				title: document.title,
+				fileType: document.fileType,
+				totalChunks: chunksInfo.length,
+			};
+		} catch (error) {
+			console.error("Failed to process and store document:", error);
+			throw error;
+		}
+	}
 
-    if (!document) {
-      throw new Error("Document not found");
-    }
+	async getDocuments(userId: string) {
+		return prisma.document.findMany({
+			where: {
+				uploadedBy: userId,
+			},
+			select: {
+				id: true,
+				title: true,
+				fileType: true,
+				totalPages: true,
+				createdAt: true,
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+	}
 
-    // 1. Delete the cloud asset
-    if (document.cloudinaryPublicId) {
-      await this.cloudinaryService.deleteFile(document.cloudinaryPublicId);
-    }
+	async getDocumentById(documentId: string) {
+		return prisma.document.findUnique({
+			where: { id: documentId },
+			select: {
+				id: true,
+				title: true,
+				fileType: true,
+				fileUrl: true,
+				totalPages: true,
+			},
+		});
+	}
 
-    // 2. Vectors and Chunks will be deleted automatically due to Prisma's CASCADE delete
-    // Delete the document record
-    await prisma.document.delete({
-      where: { id: documentId }
-    });
+	async deleteDocument(documentId: string) {
+		const document = await prisma.document.findUnique({
+			where: { id: documentId },
+		});
 
-    return { success: true };
-  }
+		if (!document) {
+			throw new Error("Document not found");
+		}
+
+		// 1. Delete the cloud asset
+		if (document.cloudinaryPublicId) {
+			await this.cloudinaryService.deleteFile(document.cloudinaryPublicId);
+		}
+
+		// 2. Vectors and Chunks will be deleted automatically due to Prisma's CASCADE delete
+		// Delete the document record
+		await prisma.document.delete({
+			where: { id: documentId },
+		});
+
+		return { success: true };
+	}
 }

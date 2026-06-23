@@ -6,13 +6,25 @@ const simulationService = new SimulationService();
 export class SimulationController {
 	public async generateSimulation(req: Request, res: Response): Promise<void> {
 		try {
-			const { documentId, highlightedText, simulationType, difficulty } = req.body;
+			let { documentId, highlightedText, simulationType, difficulty } = req.body;
 			const userId = req.user?.id;
 
 			if (!userId) {
 				res.status(401).json({ success: false, message: "Unauthorized" });
 				return;
 			}
+
+			// Sanitize and validate inputs
+			if (typeof documentId === "string") documentId = documentId.trim();
+			if (typeof highlightedText === "string") {
+				highlightedText = highlightedText.trim();
+				// Truncate to 3000 chars to avoid model limits
+				if (highlightedText.length > 3000) {
+					highlightedText = highlightedText.substring(0, 3000);
+				}
+			}
+			if (typeof simulationType === "string") simulationType = simulationType.trim().toLowerCase();
+			if (typeof difficulty === "string") difficulty = difficulty.trim().toLowerCase();
 
 			if (!documentId || !highlightedText || !simulationType || !difficulty) {
 				res.status(400).json({

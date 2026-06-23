@@ -9,7 +9,7 @@ import { conceptExpansionNode, topicDetectionNode } from "../shared/topicExpansi
 import { TopicExpansionState } from "../shared/topicExpansion.types";
 import { validateSimulationJson } from "./simulation.parser";
 import { SIMULATION_SYSTEM_PROMPT, SIMULATION_USER_PROMPT } from "./simulation.prompts";
-import { SimulationOutput } from "./simulation.types";
+import type { SimulationOutput } from "./simulation.types";
 
 const langfuse = new Langfuse({
 	publicKey: env.LANGFUSE_PUBLIC_KEY,
@@ -81,7 +81,16 @@ const buildContextNode = async (state: typeof GraphState.State) => {
 };
 
 const generateSimulationNode = async (state: typeof GraphState.State) => {
-	const { mainTopic, highlightedText, relatedConcepts, subtopics, context, traceId, simulationType, difficulty } = state;
+	const {
+		mainTopic,
+		highlightedText,
+		relatedConcepts,
+		subtopics,
+		context,
+		traceId,
+		simulationType,
+		difficulty,
+	} = state;
 
 	const trace = langfuse.trace({ id: traceId });
 

@@ -52,4 +52,3 @@ Use the following document context to accurately inform the simulation content:
 {context}
 
 Ensure the output is pure JSON matching the specified structure without any extra text or code blocks.`;
-

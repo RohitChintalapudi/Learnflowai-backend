@@ -5,6 +5,10 @@ import { SimulationController } from "./simulation.controller";
 const router: Router = Router();
 const simulationController = new SimulationController();
 
-router.post("/", authMiddleware, simulationController.generateSimulation.bind(simulationController));
+router.post(
+	"/",
+	authMiddleware,
+	simulationController.generateSimulation.bind(simulationController),
+);
 
 export default router;

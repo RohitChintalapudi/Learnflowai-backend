@@ -539,6 +539,109 @@ export const openApiDocument: OpenApiDocument = {
 				responses: { "200": { description: "Successfully generated analogy." } },
 			},
 		},
+		"/api/workflow/simulation": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Simulation",
+				description:
+					"Generates an educational simulation (visual-flow, step-by-step, or real-world) based on the highlighted text using the document context (RAG).",
+				operationId: "generateSimulation",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText", "simulationType", "difficulty"],
+								properties: {
+									documentId: {
+										type: "string",
+										description: "The ID of the source document",
+									},
+									highlightedText: {
+										type: "string",
+										description: "The text highlighted by the user (max 5000 chars)",
+									},
+									simulationType: {
+										type: "string",
+										enum: ["visual-flow", "step-by-step", "real-world"],
+										description: "The type of simulation to generate",
+									},
+									difficulty: {
+										type: "string",
+										enum: ["beginner", "intermediate", "advanced"],
+										description: "The educational difficulty level",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "Successfully generated the simulation.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean" },
+										message: { type: "string" },
+										simulation: {
+											type: "object",
+											properties: {
+												id: { type: "string" },
+												title: { type: "string" },
+												simulationType: { type: "string" },
+												difficulty: { type: "string" },
+												overview: { type: "string" },
+												entities: {
+													type: "array",
+													items: {
+														type: "object",
+														properties: {
+															id: { type: "string" },
+															label: { type: "string" },
+															role: { type: "string" },
+														},
+													},
+												},
+												steps: {
+													type: "array",
+													items: {
+														type: "object",
+														properties: {
+															stepNumber: { type: "integer" },
+															title: { type: "string" },
+															description: { type: "string" },
+															activeEntities: {
+																type: "array",
+																items: { type: "string" },
+															},
+															explanation: { type: "string" },
+														},
+													},
+												},
+												summary: { type: "string" },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"400": {
+						description: "Validation error on the request body.",
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+					"403": {
+						description: "Unauthorized document access.",
+					},
+				},
+			},
+		},
 		"/api/workflow/notes": {
 			post: {
 				tags: ["Notes"],

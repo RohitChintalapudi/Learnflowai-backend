@@ -31,7 +31,13 @@ export class SimulationService {
 			}
 
 			// 2. Run LangGraph workflow
-			const result = await runSimulationWorkflow(documentId, highlightedText, userId, simulationType, difficulty);
+			const result = await runSimulationWorkflow(
+				documentId,
+				highlightedText,
+				userId,
+				simulationType,
+				difficulty,
+			);
 
 			const workflowTime = Date.now() - startTime;
 

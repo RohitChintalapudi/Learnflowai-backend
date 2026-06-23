@@ -18,8 +18,10 @@ export function validateSimulationJson(data: any): boolean {
 		const entityIds = new Set<string>();
 		for (const entity of sim.entities) {
 			if (
-				!entity.id || typeof entity.id !== "string" ||
-				!entity.label || typeof entity.label !== "string"
+				!entity.id ||
+				typeof entity.id !== "string" ||
+				!entity.label ||
+				typeof entity.label !== "string"
 			) {
 				return false;
 			}

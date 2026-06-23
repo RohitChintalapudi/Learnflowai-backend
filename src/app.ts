@@ -14,6 +14,7 @@ import notesRoute from "./modules/workflow/notes/notes.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import profileRoute from "./modules/profile/profile.route";
+import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 
@@ -46,6 +47,7 @@ app.use("/api/workflow/notes", notesRoute);
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);
+app.use("/api/learning-history", learningHistoryRoute);
 
 app.use(notFound);
 app.use(errorHandler);

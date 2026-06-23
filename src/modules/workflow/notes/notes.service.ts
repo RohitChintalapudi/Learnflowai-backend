@@ -1,118 +1,119 @@
 import { prisma } from "../../../database";
+import { AnalyticsEventType, AnalyticsTracker } from "../../analytics/analytics.tracker";
 import { runNotesWorkflow } from "./notes.graph";
-import { NotesResponse } from "./notes.types";
+import type { NotesResponse } from "./notes.types";
 
 export class NotesService {
-  public async generateNotes(
-    documentId: string,
-    highlightedText: string,
-    userId: string
-  ): Promise<NotesResponse> {
-    try {
-      const startTime = Date.now();
+	public async generateNotes(
+		documentId: string,
+		highlightedText: string,
+		userId: string,
+	): Promise<NotesResponse> {
+		try {
+			const startTime = Date.now();
 
-      // 1. Verify document exists and check ownership
-      const document = await prisma.document.findUnique({
-        where: { id: documentId },
-        select: { id: true, uploadedBy: true },
-      });
+			// 1. Verify document exists and check ownership
+			const document = await prisma.document.findUnique({
+				where: { id: documentId },
+				select: { id: true, uploadedBy: true },
+			});
 
-      if (!document) {
-        return { success: false, message: "Document not found" };
-      }
+			if (!document) {
+				return { success: false, message: "Document not found" };
+			}
 
-      // If document was uploaded anonymously (uploadedBy is null), allow access.
-      // Otherwise, ensure the authenticated user owns it.
-      if (document.uploadedBy && document.uploadedBy !== userId) {
-        return { success: false, message: "Unauthorized document access" };
-      }
+			// If document was uploaded anonymously (uploadedBy is null), allow access.
+			// Otherwise, ensure the authenticated user owns it.
+			if (document.uploadedBy && document.uploadedBy !== userId) {
+				return { success: false, message: "Unauthorized document access" };
+			}
 
-      // 2. Run LangGraph workflow
-      const result = await runNotesWorkflow(documentId, highlightedText, userId);
+			// 2. Run LangGraph workflow
+			const result = await runNotesWorkflow(documentId, highlightedText, userId);
 
-      const workflowTime = Date.now() - startTime;
+			const workflowTime = Date.now() - startTime;
 
-      if (!result.notes) {
-        return { success: false, message: "Parsing failure: Unable to generate structured notes." };
-      }
+			if (!result.notes) {
+				return { success: false, message: "Parsing failure: Unable to generate structured notes." };
+			}
 
-      // 3. Save generated notes to DB
-      const generatedNote = await prisma.generatedNote.create({
-        data: {
-          userId,
-          documentId,
-          highlightedText,
-          title: result.notes.title,
-          notes: result.notes as any, // Store as JSON
-        }
-      });
+			// 3. Save generated notes to DB
+			const generatedNote = await prisma.generatedNote.create({
+				data: {
+					userId,
+					documentId,
+					highlightedText,
+					title: result.notes.title,
+					notes: result.notes as any, // Store as JSON
+				},
+			});
 
-      // 4. Analytics Event
-      const analyticsEvent = {
-        event: "AI_NOTES_GENERATED",
-        userId,
-        documentId,
-        highlightedText,
-        timestamp: new Date().toISOString(),
-        llmDuration: workflowTime,
-        totalDuration: workflowTime,
-        retrievedChunks: result.retrievedChunks.length,
-      };
-      
-      // Log for analytics
-      console.log(JSON.stringify(analyticsEvent));
+			// 4. Analytics Event
+			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_NOTES_GENERATED, {
+				documentId,
+			});
 
-      return {
-        success: true,
-        notes: result.notes,
-        retrievedChunks: result.retrievedChunks.length,
-        noteId: generatedNote.id,
-      };
-    } catch (error: any) {
-      console.error("Error generating notes:", error);
-      return {
-        success: false,
-        message: error?.message || "An error occurred while generating the notes",
-      };
-    }
-  }
+			if (result?.mainTopic) {
+				await AnalyticsTracker.trackTopics(userId, [
+					result.mainTopic,
+					...(result.relatedConcepts || []),
+				]);
+			}
 
-  public async deleteNote(noteId: string, userId: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const note = await prisma.generatedNote.findUnique({
-        where: { id: noteId },
-        select: { userId: true },
-      });
+			return {
+				success: true,
+				notes: result.notes,
+				retrievedChunks: result.retrievedChunks.length,
+				noteId: generatedNote.id,
+			};
+		} catch (error: any) {
+			console.error("Error generating notes:", error);
+			return {
+				success: false,
+				message: error?.message || "An error occurred while generating the notes",
+			};
+		}
+	}
 
-      if (!note) {
-        return { success: false, message: "Note not found" };
-      }
+	public async deleteNote(
+		noteId: string,
+		userId: string,
+	): Promise<{ success: boolean; message?: string }> {
+		try {
+			const note = await prisma.generatedNote.findUnique({
+				where: { id: noteId },
+				select: { userId: true },
+			});
 
-      if (note.userId !== userId) {
-        return { success: false, message: "Unauthorized to delete this note" };
-      }
+			if (!note) {
+				return { success: false, message: "Note not found" };
+			}
 
-      await prisma.generatedNote.delete({
-        where: { id: noteId },
-      });
+			if (note.userId !== userId) {
+				return { success: false, message: "Unauthorized to delete this note" };
+			}
 
-      return { success: true };
-    } catch (error: any) {
-      console.error("Error deleting note:", error);
-      return { success: false, message: "An error occurred while deleting the note" };
-    }
-  }
+			await prisma.generatedNote.delete({
+				where: { id: noteId },
+			});
 
-  public async getNotes(userId: string) {
-    try {
-      const notes = await prisma.generatedNote.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
-      return { success: true, notes };
-    } catch (error: any) {
-      console.error("Error fetching notes:", error);
-      return { success: false, message: "An error occurred while fetching notes" };
-    }
-  }
+			return { success: true };
+		} catch (error: any) {
+			console.error("Error deleting note:", error);
+			return { success: false, message: "An error occurred while deleting the note" };
+		}
+	}
+
+	public async getNotes(userId: string) {
+		try {
+			const notes = await prisma.generatedNote.findMany({
+				where: { userId },
+				orderBy: { createdAt: "desc" },
+			});
+			return { success: true, notes };
+		} catch (error: any) {
+			console.error("Error fetching notes:", error);
+			return { success: false, message: "An error occurred while fetching notes" };
+		}
+	}
 }

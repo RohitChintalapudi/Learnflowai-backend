@@ -105,7 +105,8 @@ export const openApiDocument: OpenApiDocument = {
 			post: {
 				tags: ["Documents"],
 				summary: "Upload a document",
-				description: "Uploads a document (PDF, DOCX, PPTX) for processing and RAG vector generation.",
+				description:
+					"Uploads a document (PDF, DOCX, PPTX) for processing and RAG vector generation.",
 				operationId: "uploadDocument",
 				requestBody: {
 					required: true,
@@ -189,11 +190,49 @@ export const openApiDocument: OpenApiDocument = {
 				},
 			},
 		},
+		"/api/documents/{documentId}/download": {
+			get: {
+				tags: ["Documents"],
+				summary: "Download a document",
+				description: "Proxies the download of a document to bypass CORS restrictions.",
+				operationId: "downloadDocument",
+				parameters: [
+					{
+						name: "documentId",
+						in: "path",
+						required: true,
+						schema: {
+							type: "string",
+						},
+					},
+				],
+				responses: {
+					"200": {
+						description: "Successfully retrieved the document file.",
+						content: {
+							"application/octet-stream": {
+								schema: {
+									type: "string",
+									format: "binary",
+								},
+							},
+						},
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+					"404": {
+						description: "Document not found.",
+					},
+				},
+			},
+		},
 		"/api/workflow/explanation": {
 			post: {
 				tags: ["AI Workflows"],
 				summary: "Generate AI Explanation",
-				description: "Generates an educational explanation based on the highlighted text using the document context (RAG).",
+				description:
+					"Generates an educational explanation based on the highlighted text using the document context (RAG).",
 				operationId: "generateExplanation",
 				requestBody: {
 					required: true,
@@ -248,7 +287,8 @@ export const openApiDocument: OpenApiDocument = {
 			post: {
 				tags: ["AI Workflows"],
 				summary: "Generate AI Interview Questions",
-				description: "Generates Basic, Intermediate, and Advanced interview questions based on the highlighted text using the document context (RAG).",
+				description:
+					"Generates Basic, Intermediate, and Advanced interview questions based on the highlighted text using the document context (RAG).",
 				operationId: "generateInterviewQuestions",
 				requestBody: {
 					required: true,
@@ -283,35 +323,35 @@ export const openApiDocument: OpenApiDocument = {
 										questions: {
 											type: "object",
 											properties: {
-												basic: { 
-													type: "array", 
-													items: { 
+												basic: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															q: { type: "string" },
-															a: { type: "string" }
-														}
-													} 
+															a: { type: "string" },
+														},
+													},
 												},
-												intermediate: { 
-													type: "array", 
-													items: { 
+												intermediate: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															q: { type: "string" },
-															a: { type: "string" }
-														}
-													} 
+															a: { type: "string" },
+														},
+													},
 												},
-												advanced: { 
-													type: "array", 
-													items: { 
+												advanced: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															q: { type: "string" },
-															a: { type: "string" }
-														}
-													} 
+															a: { type: "string" },
+														},
+													},
 												},
 											},
 										},
@@ -337,7 +377,8 @@ export const openApiDocument: OpenApiDocument = {
 			post: {
 				tags: ["AI Workflows"],
 				summary: "Generate AI Quiz",
-				description: "Generates a comprehensive educational quiz (MCQs, True/False, and Short Answer) based on the highlighted text using the document context (RAG).",
+				description:
+					"Generates a comprehensive educational quiz (MCQs, True/False, and Short Answer) based on the highlighted text using the document context (RAG).",
 				operationId: "generateQuiz",
 				requestBody: {
 					required: true,
@@ -372,40 +413,218 @@ export const openApiDocument: OpenApiDocument = {
 										quiz: {
 											type: "object",
 											properties: {
-												mcqs: { 
-													type: "array", 
-													items: { 
+												mcqs: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															question: { type: "string" },
 															options: { type: "array", items: { type: "string" } },
-															correctAnswer: { type: "string" }
-														}
-													} 
+															correctAnswer: { type: "string" },
+														},
+													},
 												},
-												trueFalse: { 
-													type: "array", 
-													items: { 
+												trueFalse: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															question: { type: "string" },
-															answer: { type: "boolean" }
-														}
-													} 
+															answer: { type: "boolean" },
+														},
+													},
 												},
-												shortAnswer: { 
-													type: "array", 
-													items: { 
+												shortAnswer: {
+													type: "array",
+													items: {
 														type: "object",
 														properties: {
 															question: { type: "string" },
-															expectedAnswer: { type: "string" }
-														}
-													} 
+															expectedAnswer: { type: "string" },
+														},
+													},
 												},
 											},
 										},
 										retrievedChunks: { type: "integer" },
+									},
+								},
+							},
+						},
+					},
+					"400": {
+						description: "Validation error on the request body.",
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+					"403": {
+						description: "Unauthorized document access.",
+					},
+				},
+			},
+		},
+		"/api/workflow/mindmap": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Mind Map",
+				description:
+					"Generates a structured mind map based on highlighted text using the document context.",
+				operationId: "generateMindMap",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText"],
+								properties: {
+									documentId: { type: "string" },
+									highlightedText: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated mind map." } },
+			},
+		},
+		"/api/workflow/mindmap/explain": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Explain Mind Map",
+				description: "Explains the logical flow of a previously generated mind map.",
+				operationId: "explainMindMap",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["nodes", "edges"],
+								properties: {
+									nodes: { type: "array" },
+									edges: { type: "array" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated explanation." } },
+			},
+		},
+		"/api/workflow/analogy": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Analogy",
+				description:
+					"Generates an analogy for the highlighted text in a specific theme (gaming, story, education, real-world, sports, movie, eli10).",
+				operationId: "generateAnalogy",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText", "style"],
+								properties: {
+									documentId: { type: "string" },
+									highlightedText: { type: "string" },
+									style: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: { "200": { description: "Successfully generated analogy." } },
+			},
+		},
+		"/api/workflow/simulation": {
+			post: {
+				tags: ["AI Workflows"],
+				summary: "Generate AI Simulation",
+				description:
+					"Generates an educational simulation (visual-flow, step-by-step, or real-world) based on the highlighted text using the document context (RAG).",
+				operationId: "generateSimulation",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["documentId", "highlightedText", "simulationType", "difficulty"],
+								properties: {
+									documentId: {
+										type: "string",
+										description: "The ID of the source document",
+									},
+									highlightedText: {
+										type: "string",
+										description: "The text highlighted by the user (max 5000 chars)",
+									},
+									simulationType: {
+										type: "string",
+										enum: ["visual-flow", "step-by-step", "real-world"],
+										description: "The type of simulation to generate",
+									},
+									difficulty: {
+										type: "string",
+										enum: ["beginner", "intermediate", "advanced"],
+										description: "The educational difficulty level",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "Successfully generated the simulation.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean" },
+										message: { type: "string" },
+										simulation: {
+											type: "object",
+											properties: {
+												id: { type: "string" },
+												title: { type: "string" },
+												simulationType: { type: "string" },
+												difficulty: { type: "string" },
+												overview: { type: "string" },
+												entities: {
+													type: "array",
+													items: {
+														type: "object",
+														properties: {
+															id: { type: "string" },
+															label: { type: "string" },
+															role: { type: "string" },
+														},
+													},
+												},
+												steps: {
+													type: "array",
+													items: {
+														type: "object",
+														properties: {
+															stepNumber: { type: "integer" },
+															title: { type: "string" },
+															description: { type: "string" },
+															activeEntities: {
+																type: "array",
+																items: { type: "string" },
+															},
+															explanation: { type: "string" },
+														},
+													},
+												},
+												summary: { type: "string" },
+											},
+										},
 									},
 								},
 							},
@@ -444,15 +663,15 @@ export const openApiDocument: OpenApiDocument = {
 						},
 					},
 				},
-				responses: { "200": { description: "Successfully generated notes." } }
+				responses: { "200": { description: "Successfully generated notes." } },
 			},
 			get: {
 				tags: ["Notes"],
 				summary: "Get All Notes",
 				description: "Retrieves all saved notes for the authenticated user.",
 				operationId: "getNotes",
-				responses: { "200": { description: "Successfully retrieved notes." } }
-			}
+				responses: { "200": { description: "Successfully retrieved notes." } },
+			},
 		},
 		"/api/workflow/notes/{id}": {
 			delete: {
@@ -461,8 +680,8 @@ export const openApiDocument: OpenApiDocument = {
 				description: "Deletes a specific note by ID.",
 				operationId: "deleteNote",
 				parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-				responses: { "200": { description: "Successfully deleted note." } }
-			}
+				responses: { "200": { description: "Successfully deleted note." } },
+			},
 		},
 		"/api/dashboard/summary": {
 			get: {
@@ -470,8 +689,8 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get Dashboard Summary",
 				description: "Retrieves summary statistics for the user dashboard.",
 				operationId: "getDashboardSummary",
-				responses: { "200": { description: "Successfully retrieved summary." } }
-			}
+				responses: { "200": { description: "Successfully retrieved summary." } },
+			},
 		},
 		"/api/quizzes": {
 			get: {
@@ -479,8 +698,8 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get All Quizzes",
 				description: "Retrieves all past quizzes for the user.",
 				operationId: "getAllQuizzes",
-				responses: { "200": { description: "Successfully retrieved quizzes." } }
-			}
+				responses: { "200": { description: "Successfully retrieved quizzes." } },
+			},
 		},
 		"/api/quizzes/recent": {
 			get: {
@@ -488,8 +707,8 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get Recent Quizzes",
 				description: "Retrieves the most recent quizzes for the user.",
 				operationId: "getRecentQuizzes",
-				responses: { "200": { description: "Successfully retrieved recent quizzes." } }
-			}
+				responses: { "200": { description: "Successfully retrieved recent quizzes." } },
+			},
 		},
 		"/api/quizzes/stats": {
 			get: {
@@ -497,8 +716,8 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get Quiz Stats",
 				description: "Retrieves aggregated quiz statistics for the user.",
 				operationId: "getQuizStats",
-				responses: { "200": { description: "Successfully retrieved quiz stats." } }
-			}
+				responses: { "200": { description: "Successfully retrieved quiz stats." } },
+			},
 		},
 		"/api/quizzes/{quizId}": {
 			get: {
@@ -507,7 +726,7 @@ export const openApiDocument: OpenApiDocument = {
 				description: "Retrieves details of a specific quiz.",
 				operationId: "getSingleQuiz",
 				parameters: [{ name: "quizId", in: "path", required: true, schema: { type: "string" } }],
-				responses: { "200": { description: "Successfully retrieved quiz." } }
+				responses: { "200": { description: "Successfully retrieved quiz." } },
 			},
 			delete: {
 				tags: ["Quiz Dashboard"],
@@ -515,8 +734,8 @@ export const openApiDocument: OpenApiDocument = {
 				description: "Deletes a specific quiz.",
 				operationId: "deleteQuiz",
 				parameters: [{ name: "quizId", in: "path", required: true, schema: { type: "string" } }],
-				responses: { "200": { description: "Successfully deleted quiz." } }
-			}
+				responses: { "200": { description: "Successfully deleted quiz." } },
+			},
 		},
 		"/api/profile": {
 			get: {
@@ -524,7 +743,7 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get User Profile",
 				description: "Retrieves the authenticated user's profile.",
 				operationId: "getProfile",
-				responses: { "200": { description: "Successfully retrieved profile." } }
+				responses: { "200": { description: "Successfully retrieved profile." } },
 			},
 			patch: {
 				tags: ["Profile"],
@@ -546,8 +765,8 @@ export const openApiDocument: OpenApiDocument = {
 						},
 					},
 				},
-				responses: { "200": { description: "Successfully updated profile." } }
-			}
+				responses: { "200": { description: "Successfully updated profile." } },
+			},
 		},
 		"/api/profile/stats": {
 			get: {
@@ -555,8 +774,8 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get User Stats",
 				description: "Retrieves user statistics.",
 				operationId: "getProfileStats",
-				responses: { "200": { description: "Successfully retrieved stats." } }
-			}
+				responses: { "200": { description: "Successfully retrieved stats." } },
+			},
 		},
 		"/api/profile/avatar": {
 			post: {
@@ -571,21 +790,21 @@ export const openApiDocument: OpenApiDocument = {
 							schema: {
 								type: "object",
 								properties: {
-									avatar: { type: "string", format: "binary" }
-								}
-							}
-						}
-					}
+									avatar: { type: "string", format: "binary" },
+								},
+							},
+						},
+					},
 				},
-				responses: { "200": { description: "Successfully uploaded avatar." } }
+				responses: { "200": { description: "Successfully uploaded avatar." } },
 			},
 			delete: {
 				tags: ["Profile"],
 				summary: "Delete Avatar",
 				description: "Deletes the user's avatar image.",
 				operationId: "deleteAvatar",
-				responses: { "200": { description: "Successfully deleted avatar." } }
-			}
+				responses: { "200": { description: "Successfully deleted avatar." } },
+			},
 		},
 	},
 	components: {

@@ -27,6 +27,11 @@ model User {
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
+  generatedMindMaps     GeneratedMindMap[]
+  generatedAnalogies    GeneratedAnalogy[]
+  generatedSimulations  GeneratedSimulation[]
+  analyticsEvents       AnalyticsEvent[]
+  userTopics            UserTopic[]
 
   @@map("users")
 }
@@ -83,6 +88,8 @@ model Document {
   fileName   String
   fileType   String
   fileUrl    String?
+  cloudinaryPublicId String?
+  fileSize   Int?
   totalPages Int      @default(0)
   uploadedBy String?
   createdAt  DateTime @default(now())
@@ -94,6 +101,9 @@ model Document {
   quizSets              QuizSet[]
   generatedNotes        GeneratedNote[]
   generatedQuizzes      GeneratedQuiz[]
+  generatedMindMaps     GeneratedMindMap[]
+  generatedAnalogies    GeneratedAnalogy[]
+  generatedSimulations  GeneratedSimulation[]
 
   @@map("documents")
 }
@@ -191,4 +201,77 @@ model GeneratedQuiz {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generated_quizzes")
+}
+
+model GeneratedMindMap {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  title           String
+  mindMapData     Json     @default("{}")
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_mindmaps")
+}
+
+model GeneratedAnalogy {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  style           String
+  title           String
+  analogyData     Json
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_analogies")
+}
+
+model GeneratedSimulation {
+  id              String   @id @default(cuid())
+  userId          String
+  documentId      String
+  highlightedText String
+  simulationType  String   @default("visual-flow")
+  difficulty      String   @default("intermediate")
+  simulationData  Json     @default("{}")
+  createdAt       DateTime @default(now())
+
+  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_simulations")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  eventType String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_events")
+}
+
+model UserTopic {
+  id            String   @id @default(cuid())
+  userId        String
+  topic         String
+  frequency     Int      @default(1)
+  lastStudiedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic])
+  @@map("user_topics")
 }

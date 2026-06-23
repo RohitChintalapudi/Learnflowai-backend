@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { QuizDashboardController } from "./quizDashboard.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
+import { QuizDashboardController } from "./quizDashboard.controller";
 
 const router: Router = Router();
 const quizDashboardController = new QuizDashboardController();

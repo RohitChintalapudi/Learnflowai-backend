@@ -40,11 +40,11 @@ export class LearningHistoryService {
 
     const timeline: any[] = [];
 
-    explanations.forEach((e) => timeline.push({ ...e, activityType: "Explanation" }));
-    notes.forEach((n) => timeline.push({ ...n, activityType: "GeneratedNote" }));
-    generatedQuizzes.forEach((q) => timeline.push({ ...q, activityType: "GeneratedQuiz" }));
-    quizSets.forEach((q) => timeline.push({ ...q, activityType: "QuizSet" }));
-    interviewQuestions.forEach((i) => timeline.push({ ...i, activityType: "InterviewQuestionSet" }));
+    explanations.forEach((e: any) => timeline.push({ ...e, activityType: "Explanation" }));
+    notes.forEach((n: any) => timeline.push({ ...n, activityType: "GeneratedNote" }));
+    generatedQuizzes.forEach((q: any) => timeline.push({ ...q, activityType: "GeneratedQuiz" }));
+    quizSets.forEach((q: any) => timeline.push({ ...q, activityType: "QuizSet" }));
+    interviewQuestions.forEach((i: any) => timeline.push({ ...i, activityType: "InterviewQuestionSet" }));
 
     // Sort descending by created time
     timeline.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());

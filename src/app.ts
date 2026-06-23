@@ -2,7 +2,7 @@ import path from "node:path";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { auth } from "./auth";
+import { auth, allowedOrigins } from "./auth";
 import { env } from "./config/env";
 import { registerSwaggerDocs } from "./docs/swagger";
 import { healthRouter } from "./features/health/routes/health-routes";
@@ -23,9 +23,11 @@ import documentRouter from "./routes/document.routes";
 
 const app: Express = express();
 
+app.set("trust proxy", true);
+
 app.use(
 	cors({
-		origin: [env.BETTER_AUTH_URL, "http://localhost:5173", "http://localhost:5174"],
+		origin: allowedOrigins,
 		credentials: true,
 	}),
 );
@@ -54,6 +56,10 @@ app.use("/api/dashboard", dashboardRoute);
 app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);
 app.use("/api/analytics", analyticsRoute);
+
+app.get("/", (req, res) => {
+  res.redirect("http://localhost:5173/login");
+});
 
 app.use(notFound);
 app.use(errorHandler);

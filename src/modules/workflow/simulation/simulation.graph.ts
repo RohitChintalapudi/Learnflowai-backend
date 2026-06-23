@@ -7,7 +7,7 @@ import { getGroqClient } from "../../../lib/ai/groq";
 import { retrieveRelevantChunks } from "../../../lib/rag/retrieveRelevantChunks";
 import { conceptExpansionNode, topicDetectionNode } from "../shared/topicExpansion.nodes";
 import { TopicExpansionState } from "../shared/topicExpansion.types";
-import { validateSimulationJson } from "./simulation.parser";
+import { parseAndSanitizeSimulation } from "./simulation.parser";
 import { SIMULATION_SYSTEM_PROMPT, SIMULATION_USER_PROMPT } from "./simulation.prompts";
 import type { SimulationOutput } from "./simulation.types";
 
@@ -30,19 +30,18 @@ const GraphState = Annotation.Root({
 });
 
 const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
-	const { highlightedText, documentId, traceId, mainTopic, relatedConcepts, subtopics } = state;
+	const { highlightedText, documentId, traceId } = state;
 
 	const trace = langfuse.trace({ id: traceId });
 	const span = trace.span({
 		name: "retrieve-chunks",
-		input: { highlightedText, mainTopic, relatedConcepts, subtopics, documentId },
+		input: { highlightedText, documentId },
 	});
 
 	const startTime = Date.now();
 
-	const query = `${highlightedText} ${mainTopic || ""} ${(relatedConcepts || []).join(" ")} ${(subtopics || []).join(" ")}`;
-	const embedding = await generateEmbedding(query);
-
+	// Generate embedding on the highlightedText directly for fast parallel retrieval
+	const embedding = await generateEmbedding(highlightedText);
 	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
 
 	const duration = Date.now() - startTime;
@@ -94,63 +93,80 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 
 	const trace = langfuse.trace({ id: traceId });
 
-	const userPrompt = SIMULATION_USER_PROMPT.replace("{mainTopic}", mainTopic || "")
-		.replace("{highlightedText}", highlightedText || "")
-		.replace("{relatedConcepts}", (relatedConcepts || []).join(", "))
-		.replace("{subtopics}", (subtopics || []).join(", "))
-		.replace("{context}", context)
-		.replace("{simulationType}", simulationType)
-		.replace("{difficulty}", difficulty);
-
-	const generation = trace.generation({
-		name: "generate-simulation",
-		model: "llama-3.3-70b-versatile",
-		modelParameters: {
-			temperature: 0.2,
-			maxTokens: 2500,
-		},
-		input: [
-			{ role: "system", content: SIMULATION_SYSTEM_PROMPT },
-			{ role: "user", content: userPrompt },
-		],
-	});
-
 	const groqClient = getGroqClient("llama-3.3-70b-versatile");
 
 	let simulationData: any = null;
+	let lastError: Error | null = null;
+	let rawResponse = "";
 
 	for (let attempt = 1; attempt <= 2; attempt++) {
+		const userPrompt = SIMULATION_USER_PROMPT.replace("{mainTopic}", mainTopic || "")
+			.replace("{highlightedText}", highlightedText || "")
+			.replace("{relatedConcepts}", (relatedConcepts || []).join(", "))
+			.replace("{subtopics}", (subtopics || []).join(", "))
+			.replace("{context}", context)
+			.replace("{simulationType}", simulationType)
+			.replace("{difficulty}", difficulty);
+
+		let finalPrompt = userPrompt;
+		if (attempt > 1 && lastError) {
+			finalPrompt = `${userPrompt}\n\nWARNING: Your previous attempt failed validation/parsing with error: "${lastError.message}".\nYour previous JSON output was:\n${rawResponse}\n\nPlease analyze the error, correct the JSON structure, and output the fully corrected JSON. Follow all rules strictly.`;
+		}
+
+		const generation = trace.generation({
+			name: `generate-simulation-attempt-${attempt}`,
+			model: "llama-3.3-70b-versatile",
+			modelParameters: {
+				temperature: attempt === 1 ? 0.2 : 0.4,
+				maxTokens: 2500,
+			},
+			input: [
+				{ role: "system", content: SIMULATION_SYSTEM_PROMPT },
+				{ role: "user", content: finalPrompt },
+			],
+		});
+
 		try {
 			const response = await groqClient.invoke(
-				[new SystemMessage(SIMULATION_SYSTEM_PROMPT), new HumanMessage(userPrompt)],
+				[new SystemMessage(SIMULATION_SYSTEM_PROMPT), new HumanMessage(finalPrompt)],
 				{
 					response_format: { type: "json_object" },
 				},
 			);
 
-			const rawResponse = response.content as string;
-			const parsedJson = JSON.parse(rawResponse);
+			rawResponse = response.content as string;
 
-			if (validateSimulationJson(parsedJson)) {
-				simulationData = parsedJson;
+			// Parse and heal JSON output
+			const sanitized = parseAndSanitizeSimulation(
+				rawResponse,
+				simulationType,
+				difficulty,
+				mainTopic ? `${mainTopic} Simulation` : "AI Simulation",
+			);
+
+			if (sanitized.entities.length > 0 && sanitized.steps.length > 0) {
+				simulationData = sanitized;
+				generation.end({
+					output: simulationData,
+				});
 				break;
 			} else {
-				throw new Error("Invalid simulation JSON format or failed validation rules");
+				throw new Error("Sanitization failed to produce any valid entities or steps");
 			}
 		} catch (error) {
+			lastError = error as Error;
+
 			if (attempt === 2) {
 				generation.end({ level: "ERROR", statusMessage: (error as Error).message });
 				throw new Error(
 					"Failed to generate valid JSON simulation after 2 attempts. Last error: " +
 						(error as Error).message,
 				);
+			} else {
+				generation.end({ level: "WARNING", statusMessage: (error as Error).message });
 			}
 		}
 	}
-
-	generation.end({
-		output: simulationData,
-	});
 
 	return { simulationData };
 };
@@ -161,9 +177,13 @@ const workflow = new StateGraph(GraphState)
 	.addNode("RetrieveRelevantChunks", retrieveRelevantChunksNode)
 	.addNode("BuildContext", buildContextNode)
 	.addNode("GenerateSimulation", generateSimulationNode)
+	// Start both parallel branches
 	.addEdge(START, "TopicDetection")
+	.addEdge(START, "RetrieveRelevantChunks")
+	// TopicDetection flows into ConceptExpansion (pass-through)
 	.addEdge("TopicDetection", "ConceptExpansion")
-	.addEdge("ConceptExpansion", "RetrieveRelevantChunks")
+	// Both branches join at BuildContext
+	.addEdge("ConceptExpansion", "BuildContext")
 	.addEdge("RetrieveRelevantChunks", "BuildContext")
 	.addEdge("BuildContext", "GenerateSimulation")
 	.addEdge("GenerateSimulation", END);

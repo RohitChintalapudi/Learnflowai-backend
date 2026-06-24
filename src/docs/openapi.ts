@@ -65,6 +65,10 @@ export const openApiDocument: OpenApiDocument = {
 			name: "Profile",
 			description: "User profile and avatar endpoints.",
 		},
+		{
+			name: "Learning History",
+			description: "User learning timeline and personalized study suggestions.",
+		},
 	],
 	paths: {
 		"/api/health": {
@@ -805,6 +809,24 @@ export const openApiDocument: OpenApiDocument = {
 				operationId: "deleteAvatar",
 				responses: { "200": { description: "Successfully deleted avatar." } },
 			},
+		},
+		"/api/learning-history": {
+			get: {
+				tags: ["Learning History"],
+				summary: "Get Learning History",
+				description: "Retrieves a chronological timeline of the user's learning activities.",
+				operationId: "getLearningHistory",
+				responses: { "200": { description: "Successfully retrieved history." } }
+			}
+		},
+		"/api/learning-history/suggestions": {
+			get: {
+				tags: ["Learning History"],
+				summary: "Get Personalized Suggestions",
+				description: "Generates AI-driven personalized study suggestions based on the user's learning history.",
+				operationId: "getPersonalizedSuggestions",
+				responses: { "200": { description: "Successfully generated suggestions." } }
+			}
 		},
 	},
 	components: {

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { ProfileController } from "./profile.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
 import { avatarUploadMiddleware } from "../../middlewares/avatarUpload.middleware";
+import { ProfileController } from "./profile.controller";
 
 const router: Router = Router();
 const profileController = new ProfileController();
@@ -14,11 +14,7 @@ router.patch("/", profileController.updateProfile);
 router.get("/stats", profileController.getStats);
 
 // Avatar upload routes
-router.post(
-  "/avatar",
-  avatarUploadMiddleware.single("avatar"),
-  profileController.uploadAvatar
-);
+router.post("/avatar", avatarUploadMiddleware.single("avatar"), profileController.uploadAvatar);
 router.delete("/avatar", profileController.deleteAvatar);
 
 export default router;

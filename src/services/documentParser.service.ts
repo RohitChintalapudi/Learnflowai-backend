@@ -1,77 +1,79 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import mammoth from "mammoth";
 import { parseOffice } from "officeparser";
 import { PDFParse } from "pdf-parse";
 
 export interface ExtractResponse {
-  text: string;
-  totalPages: number;
-  fileType: string;
+	text: string;
+	totalPages: number;
+	fileType: string;
 }
 
 export class DocumentParserService {
-  /**
-   * Automatically determines which extraction strategy to use based on file extension or mimetype.
-   */
-  async extractText(file: Express.Multer.File): Promise<ExtractResponse> {
-    const filePath = file.path;
-    const extension = path.extname(file.originalname).toLowerCase();
-    
-    let text = "";
-    let totalPages = 1;
-    let fileType = extension.replace(".", ""); // e.g. "pdf", "docx"
+	/**
+	 * Automatically determines which extraction strategy to use based on file extension or mimetype.
+	 */
+	async extractText(file: Express.Multer.File): Promise<ExtractResponse> {
+		if (!file.buffer) {
+			throw new Error("File buffer is missing. Ensure memoryStorage is used.");
+		}
 
-    try {
-      if (extension === ".pdf") {
-        const result = await this.parsePDF(filePath);
-        text = result.text;
-        totalPages = result.numpages;
-      } else if (extension === ".docx" || extension === ".doc") {
-        text = await this.parseDOCX(filePath);
-        // Word documents don't naturally give us page count via mammoth easily
-        totalPages = 1; 
-      } else if (extension === ".pptx" || extension === ".ppt") {
-        text = await this.parsePPTX(filePath);
-        totalPages = 1; 
-      } else {
-        throw new Error(`Unsupported file extension: ${extension}`);
-      }
+		const extension = path.extname(file.originalname).toLowerCase();
 
-      return {
-        text: text.trim(),
-        totalPages,
-        fileType
-      };
-    } catch (error) {
-      console.error(`Failed to parse document ${file.originalname}:`, error);
-      throw new Error(`Document parsing failed: ${(error as Error).message}`);
-    }
-  }
+		let text = "";
+		let totalPages = 1;
+		let fileType = extension.replace(".", ""); // e.g. "pdf", "docx"
 
-  private async parsePDF(filePath: string): Promise<{ text: string, numpages: number }> {
-    const dataBuffer = await fs.readFile(filePath);
-    const parser = new PDFParse({ data: dataBuffer });
-    try {
-      const data = await parser.getText();
-      return {
-        text: data.text,
-        numpages: data.pages?.length || 1 // pdf-parse 2.4.5 returns pages array
-      };
-    } finally {
-      await parser.destroy();
-    }
-  }
+		try {
+			if (extension === ".pdf") {
+				const result = await this.parsePDF(file.buffer);
+				text = result.text;
+				totalPages = result.numpages;
+			} else if (extension === ".docx" || extension === ".doc") {
+				text = await this.parseDOCX(file.buffer);
+				totalPages = 1;
+			} else if (extension === ".pptx" || extension === ".ppt") {
+				text = await this.parsePPTX(file.buffer);
+				totalPages = 1;
+			} else if (extension === ".txt" || file.mimetype === "text/plain") {
+				text = file.buffer.toString("utf-8");
+				fileType = "txt";
+				totalPages = 1;
+			} else {
+				throw new Error(`Unsupported file extension: ${extension}`);
+			}
 
-  private async parseDOCX(filePath: string): Promise<string> {
-    // mammoth works best with docx
-    const result = await mammoth.extractRawText({ path: filePath });
-    return result.value;
-  }
+			return {
+				text: text.trim(),
+				totalPages,
+				fileType,
+			};
+		} catch (error) {
+			console.error(`Failed to parse document ${file.originalname}:`, error);
+			throw new Error(`Document parsing failed: ${(error as Error).message}`);
+		}
+	}
 
-  private async parsePPTX(filePath: string): Promise<string> {
-    // officeparser can parse pptx, docx, xlsx etc.
-    const ast = await parseOffice(filePath);
-    return ast.toText();
-  }
+	private async parsePDF(buffer: Buffer): Promise<{ text: string; numpages: number }> {
+		const parser = new PDFParse({ data: buffer });
+		try {
+			const data = await parser.getText();
+			return {
+				text: data.text,
+				numpages: data.pages?.length || 1,
+			};
+		} finally {
+			await parser.destroy();
+		}
+	}
+
+	private async parseDOCX(buffer: Buffer): Promise<string> {
+		const result = await mammoth.extractRawText({ buffer });
+		return result.value;
+	}
+
+	private async parsePPTX(buffer: Buffer): Promise<string> {
+		const ast = await parseOffice(buffer);
+		return ast.toText();
+	}
 }

@@ -60,19 +60,9 @@ function getScalarReferenceHtml() {
 			title: "API Reference",
 			description: "Application and authentication API reference",
 		},
-		sources: [
-			{
-				title: "API",
-				slug: "api",
-				url: "/api/openapi.json",
-			},
-			{
-				title: "Auth",
-				slug: "auth",
-				url: "/api/auth/open-api/generate-schema",
-				default: true,
-			},
-		],
+		spec: {
+			url: "/api/openapi-all.json",
+		},
 		theme: "default",
 	};
 
@@ -114,6 +104,49 @@ export function registerSwaggerDocs(app: Express) {
 		res.json(formatAuthOpenApiDocument(authOpenApiDocument));
 	});
 
+	app.get("/api/openapi-all.json", async (_req: Request, res: Response) => {
+		try {
+			const authOpenApiDocument = await auth.api.generateOpenAPISchema({
+				headers: new Headers(),
+			});
+
+			const formattedAuth = formatAuthOpenApiDocument(authOpenApiDocument);
+
+			const combinedSchema = {
+				...openApiDocument,
+				paths: {
+					...openApiDocument.paths,
+					...formattedAuth.paths,
+				},
+				components: {
+					...openApiDocument.components,
+					schemas: {
+						...(openApiDocument.components?.schemas || {}),
+						...(((formattedAuth.components as Record<string, unknown>)?.schemas as Record<
+							string,
+							unknown
+						>) || {}),
+					},
+					securitySchemes: {
+						...(((openApiDocument.components as Record<string, unknown>)?.securitySchemes as Record<
+							string,
+							unknown
+						>) || {}),
+						...(((formattedAuth.components as Record<string, unknown>)?.securitySchemes as Record<
+							string,
+							unknown
+						>) || {}),
+					},
+				},
+			};
+
+			res.json(combinedSchema);
+		} catch (error) {
+			console.error("Failed to generate combined OpenAPI schema:", error);
+			res.status(500).json({ error: "Failed to generate OpenAPI schema" });
+		}
+	});
+
 	app.get("/api/v1/docs", (_req: Request, res: Response) => {
 		res.type("html").send(getScalarReferenceHtml());
 	});
@@ -121,11 +154,15 @@ export function registerSwaggerDocs(app: Express) {
 	app.use(
 		"/api/docs",
 		swaggerUi.serve,
-		swaggerUi.setup(openApiDocument, {
+		swaggerUi.setup(undefined, {
 			customSiteTitle: "AI Doubt Clarification API Docs",
 			explorer: true,
 			swaggerOptions: {
 				urls: [
+					{
+						name: "All Unified API",
+						url: "/api/openapi-all.json",
+					},
 					{
 						name: "Application API",
 						url: "/api/openapi.json",

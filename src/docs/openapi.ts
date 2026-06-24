@@ -73,6 +73,10 @@ export const openApiDocument: OpenApiDocument = {
 			name: "Learning History",
 			description: "User learning timeline and personalized study suggestions.",
 		},
+		{
+			name: "Settings",
+			description: "User settings management endpoints.",
+		},
 	],
 	paths: {
 		"/api/settings/delete-account": {
@@ -868,17 +872,54 @@ export const openApiDocument: OpenApiDocument = {
 				summary: "Get Learning History",
 				description: "Retrieves a chronological timeline of the user's learning activities.",
 				operationId: "getLearningHistory",
-				responses: { "200": { description: "Successfully retrieved history." } }
-			}
+				responses: { "200": { description: "Successfully retrieved history." } },
+			},
 		},
 		"/api/learning-history/suggestions": {
 			get: {
 				tags: ["Learning History"],
 				summary: "Get Personalized Suggestions",
-				description: "Generates AI-driven personalized study suggestions based on the user's learning history.",
+				description:
+					"Generates AI-driven personalized study suggestions based on the user's learning history.",
 				operationId: "getPersonalizedSuggestions",
-				responses: { "200": { description: "Successfully generated suggestions." } }
-			}
+				responses: { "200": { description: "Successfully generated suggestions." } },
+			},
+		},
+		"/api/settings/account": {
+			get: {
+				tags: ["Settings"],
+				summary: "Get Account Settings",
+				description:
+					"Retrieves the authenticated user's account details (Name, Email, Provider, and Created At).",
+				operationId: "getAccountSettings",
+				responses: {
+					"200": {
+						description: "Successfully retrieved account settings.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean" },
+										data: {
+											type: "object",
+											properties: {
+												name: { type: "string" },
+												email: { type: "string" },
+												provider: { type: "string" },
+												createdAt: { type: "string", format: "date-time" },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"401": {
+						description: "Unauthorized",
+					},
+				},
+			},
 		},
 	},
 	components: {

@@ -38,6 +38,10 @@ export const openApiDocument: OpenApiDocument = {
 	],
 	tags: [
 		{
+			name: "Settings",
+			description: "Settings and account management endpoints.",
+		},
+		{
 			name: "Health",
 			description: "Service and dependency health checks.",
 		},
@@ -71,6 +75,54 @@ export const openApiDocument: OpenApiDocument = {
 		},
 	],
 	paths: {
+		"/api/settings/delete-account": {
+			delete: {
+				tags: ["Settings"],
+				summary: "Delete user account",
+				description: "Permanently deletes the authenticated user's account and all associated data.",
+				operationId: "deleteAccount",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["confirmationText"],
+								properties: {
+									confirmationText: {
+										type: "string",
+										description: "Must be exactly 'DELETE' to confirm.",
+										example: "DELETE"
+									}
+								}
+							}
+						}
+					}
+				},
+				responses: {
+					"200": {
+						description: "Account deleted successfully.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										message: { type: "string", example: "Account deleted successfully" }
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						description: "Validation failed (e.g., incorrect confirmationText).",
+					},
+					"401": {
+						description: "Unauthorized",
+					}
+				}
+			}
+		},
 		"/api/health": {
 			get: {
 				tags: ["Health"],

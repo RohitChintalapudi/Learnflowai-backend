@@ -2,27 +2,22 @@ import path from "node:path";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { auth, allowedOrigins } from "./auth";
-import { env } from "./config/env";
+import { allowedOrigins, auth } from "./auth";
 import { registerSwaggerDocs } from "./docs/swagger";
 import { healthRouter } from "./features/health/routes/health-routes";
 import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 import analyticsRoute from "./modules/analytics/analytics.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
+import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 import profileRoute from "./modules/profile/profile.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
+import accountSettingsRoute from "./modules/settings/account/account.route";
 import analogyRoute from "./modules/workflow/analogy/analogy.route";
 import explanationRoute from "./modules/workflow/explanation/explanation.route";
 import interviewQuestionsRoute from "./modules/workflow/interview-questions/interviewQuestions.route";
 import mindmapRoute from "./modules/workflow/mindmap/mindmap.route";
 import notesRoute from "./modules/workflow/notes/notes.route";
-import dashboardRoute from "./modules/dashboard/dashboard.route";
-import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
-import profileRoute from "./modules/profile/profile.route";
-import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
-import { errorHandler } from "./middleware/error-handler";
-import { notFound } from "./middleware/not-found";
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
@@ -62,10 +57,11 @@ app.use("/api/dashboard", dashboardRoute);
 app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);
 app.use("/api/learning-history", learningHistoryRoute);
+app.use("/api/settings/account", accountSettingsRoute);
 app.use("/api/analytics", analyticsRoute);
 
-app.get("/", (req, res) => {
-  res.redirect("http://localhost:5173/login");
+app.get("/", (_req, res) => {
+	res.redirect("http://localhost:5173/login");
 });
 
 app.use(notFound);

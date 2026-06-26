@@ -83,7 +83,8 @@ export const openApiDocument: OpenApiDocument = {
 			delete: {
 				tags: ["Settings"],
 				summary: "Delete user account",
-				description: "Permanently deletes the authenticated user's account and all associated data.",
+				description:
+					"Permanently deletes the authenticated user's account and all associated data.",
 				operationId: "deleteAccount",
 				requestBody: {
 					required: true,
@@ -96,12 +97,12 @@ export const openApiDocument: OpenApiDocument = {
 									confirmationText: {
 										type: "string",
 										description: "Must be exactly 'DELETE' to confirm.",
-										example: "DELETE"
-									}
-								}
-							}
-						}
-					}
+										example: "DELETE",
+									},
+								},
+							},
+						},
+					},
 				},
 				responses: {
 					"200": {
@@ -112,20 +113,20 @@ export const openApiDocument: OpenApiDocument = {
 									type: "object",
 									properties: {
 										success: { type: "boolean", example: true },
-										message: { type: "string", example: "Account deleted successfully" }
-									}
-								}
-							}
-						}
+										message: { type: "string", example: "Account deleted successfully" },
+									},
+								},
+							},
+						},
 					},
 					"400": {
 						description: "Validation failed (e.g., incorrect confirmationText).",
 					},
 					"401": {
 						description: "Unauthorized",
-					}
-				}
-			}
+					},
+				},
+			},
 		},
 		"/api/health": {
 			get: {
@@ -921,6 +922,109 @@ export const openApiDocument: OpenApiDocument = {
 				},
 			},
 		},
+		"/api/settings/change-password": {
+			patch: {
+				tags: ["Settings"],
+				summary: "Change Password",
+				description:
+					"Updates the authenticated user's password after verifying the current password.",
+				operationId: "changePassword",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["currentPassword", "newPassword", "confirmPassword"],
+								properties: {
+									currentPassword: {
+										type: "string",
+										minLength: 1,
+										example: "OldPassword123",
+									},
+									newPassword: {
+										type: "string",
+										minLength: 8,
+										maxLength: 64,
+										pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$",
+										example: "NewPassword123",
+									},
+									confirmPassword: {
+										type: "string",
+										example: "NewPassword123",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "Password updated successfully.",
+						content: {
+							"application/json": {
+								schema: { $ref: "#/components/schemas/SuccessMessageResponse" },
+								examples: {
+									success: {
+										value: {
+											success: true,
+											message: "Password updated successfully.",
+										},
+									},
+								},
+							},
+						},
+					},
+					"400": {
+						description:
+							"Validation failed, current password is incorrect, same password, or OAuth-only account.",
+						content: {
+							"application/json": {
+								schema: { $ref: "#/components/schemas/ErrorResponse" },
+								examples: {
+									wrongCurrentPassword: {
+										value: {
+											success: false,
+											message: "Current password is incorrect.",
+										},
+									},
+									passwordsDoNotMatch: {
+										value: {
+											success: false,
+											message: "Passwords do not match.",
+										},
+									},
+									samePassword: {
+										value: {
+											success: false,
+											message: "New password must be different from the current password.",
+										},
+									},
+									oauthAccount: {
+										value: {
+											success: false,
+											message: "Password cannot be changed for OAuth accounts.",
+										},
+									},
+								},
+							},
+						},
+					},
+					"401": {
+						description: "Unauthorized.",
+						content: {
+							"application/json": {
+								schema: { $ref: "#/components/schemas/ErrorResponse" },
+								example: {
+									success: false,
+									message: "Unauthorized.",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 	components: {
 		schemas: {
@@ -967,6 +1071,19 @@ export const openApiDocument: OpenApiDocument = {
 					success: {
 						type: "boolean",
 						examples: [false],
+					},
+					message: {
+						type: "string",
+					},
+				},
+			},
+			SuccessMessageResponse: {
+				type: "object",
+				required: ["success", "message"],
+				properties: {
+					success: {
+						type: "boolean",
+						examples: [true],
 					},
 					message: {
 						type: "string",

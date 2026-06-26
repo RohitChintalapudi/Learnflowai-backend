@@ -9,7 +9,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 import analyticsRoute from "./modules/analytics/analytics.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
-import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
+
 import profileRoute from "./modules/profile/profile.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import accountSettingsRoute from "./modules/settings/account/account.route";
@@ -23,6 +23,7 @@ import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
 import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
+import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 
 const app: Express = express();
 
@@ -62,6 +63,7 @@ app.use("/api/learning-history", learningHistoryRoute);
 app.use("/api/settings/account", accountSettingsRoute);
 app.use("/api/analytics", analyticsRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
+app.use("/api/settings/change-password", changePasswordRoute);
 
 app.get("/", (_req, res) => {
 	res.redirect("http://localhost:5173/login");

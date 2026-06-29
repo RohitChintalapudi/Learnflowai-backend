@@ -13,6 +13,8 @@ import dashboardRoute from "./modules/dashboard/dashboard.route";
 import profileRoute from "./modules/profile/profile.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import accountSettingsRoute from "./modules/settings/account/account.route";
+import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
+import settingsExportRoute from "./modules/settings/export/export.route";
 import analogyRoute from "./modules/workflow/analogy/analogy.route";
 import explanationRoute from "./modules/workflow/explanation/explanation.route";
 import interviewQuestionsRoute from "./modules/workflow/interview-questions/interviewQuestions.route";
@@ -61,7 +63,7 @@ app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);
 app.use("/api/learning-history", learningHistoryRoute);
 app.use("/api/settings/account", accountSettingsRoute);
-app.use("/api/analytics", analyticsRoute);
+app.use("/api/settings/export", settingsExportRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);
 

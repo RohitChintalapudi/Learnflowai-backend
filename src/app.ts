@@ -24,7 +24,7 @@ import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
 import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
-import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
+
 import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 
 const app: Express = express();

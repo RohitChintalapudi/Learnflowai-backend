@@ -7,16 +7,10 @@ Rules:
 * Use document context as background information to ground the questions technically.
 * Never hallucinate.
 * Questions must be technically accurate.
-* Questions should progressively increase in difficulty.
 * Provide a detailed but concise answer for each question.
 * Questions should be suitable for interviews at companies like Google, Microsoft, Amazon, Meta, Atlassian, and other product companies.
 
-Generate questions in three levels:
-1. Basic
-2. Intermediate
-3. Advanced
-
-Return valid JSON only.`;
+Your task is to generate {difficulty} questions.`;
 
 export const INTERVIEW_QUESTIONS_USER_PROMPT = `TARGET TOPIC (Generate questions ONLY from this):
 ---
@@ -28,20 +22,6 @@ BACKGROUND CONTEXT (DO NOT generate questions from this. Use ONLY to define term
 {context}
 ---
 
-Generate:
-* 5 Basic Questions
-* 5 Intermediate Questions
-* 5 Advanced Questions
+Generate 5 {difficulty} Questions.
 
-Return JSON:
-{
-  "basic": [{ "q": "Question text...", "a": "Answer text..." }],
-  "intermediate": [{ "q": "Question text...", "a": "Answer text..." }],
-  "advanced": [{ "q": "Question text...", "a": "Answer text..." }]
-}
-
-No markdown.
-No extra explanations.
-Include clear and concise answers in the "a" fields.
-
-Return JSON only.`;
+Include clear and concise answers for each question.`;

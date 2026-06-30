@@ -5,6 +5,10 @@ import { SUGGESTIONS_SYSTEM_PROMPT, SUGGESTIONS_USER_PROMPT } from "./learningHi
 
 export class LearningHistoryService {
   async getLearningHistory(userId: string, limit: number = 50) {
+    if (!userId || typeof userId !== "string" || userId.trim() === "") {
+      return [];
+    }
+
     const [explanations, notes, generatedQuizzes, quizSets, interviewQuestions] = await Promise.all([
       prisma.explanation.findMany({
         where: { userId },
@@ -53,8 +57,15 @@ export class LearningHistoryService {
   }
 
   async getPersonalizedSuggestions(userId: string) {
+    if (!userId || typeof userId !== "string" || userId.trim() === "") {
+      return [];
+    }
+
     // 1. Fetch recent history for context (only need top 15)
     const recentHistory = await this.getLearningHistory(userId, 15);
+    if (!recentHistory || recentHistory.length === 0) {
+      return [];
+    }
     const topHistory = recentHistory; // limit context
 
     const historyContextList = topHistory

@@ -24,7 +24,6 @@ import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
 import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
-import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
 import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 
 const app: Express = express();
@@ -39,6 +38,27 @@ app.use(
 );
 
 registerSwaggerDocs(app);
+
+// Rewrite root auth paths (e.g. /sign-up, /sign-in, /sign-out, /session, /callback) to Better Auth's routes
+app.use((req, res, next) => {
+	const authPaths = [
+		"sign-up",
+		"sign-in",
+		"sign-out",
+		"session",
+		"get-session",
+		"reset-password",
+		"change-password",
+		"verify-email",
+		"callback",
+		"forget-password",
+	];
+	const firstSegment = req.path.split("/")[1];
+	if (authPaths.includes(firstSegment)) {
+		req.url = `/api/auth${req.url}`;
+	}
+	next();
+});
 
 // Express 5
 app.all("/api/auth/{*any}", toNodeHandler(auth));

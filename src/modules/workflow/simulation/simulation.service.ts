@@ -1,4 +1,5 @@
-import { prisma } from "../../../database/prisma";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "../../../database";
 import { AnalyticsEventType, AnalyticsTracker } from "../../analytics/analytics.tracker";
 import { runSimulationWorkflow } from "./simulation.graph";
 import type { SimulationOutput, SimulationResponse } from "./simulation.types";
@@ -12,7 +13,6 @@ export class SimulationService {
 		userId: string,
 	): Promise<SimulationResponse> {
 		try {
-			const startTime = Date.now();
 
 			// 1. Verify document exists and check ownership
 			const document = await prisma.document.findUnique({
@@ -39,8 +39,6 @@ export class SimulationService {
 				difficulty,
 			);
 
-			const workflowTime = Date.now() - startTime;
-
 			// 3. Save generated simulation to DB
 			const generatedSimulation = await prisma.generatedSimulation.create({
 				data: {
@@ -49,22 +47,30 @@ export class SimulationService {
 					highlightedText,
 					simulationType,
 					difficulty,
-					simulationData: result.simulationData || {},
+					simulationData: (result.simulationData || {}) as Prisma.InputJsonValue,
 				},
 			});
 
-			// 4. Analytics Event
-			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_SIMULATION_GENERATED, {
+			// 4. Analytics Event (run in background)
+			AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_SIMULATION_GENERATED, {
 				documentId,
 				simulationType,
 				difficulty,
-			});
+			}).catch((err) => console.error("[SimulationService] Error tracking analytics event:", err));
 
-			if (result?.mainTopic) {
-				await AnalyticsTracker.trackTopics(userId, [
-					result.mainTopic,
-					...(result.relatedConcepts || []),
-				]);
+			const mainTopic = result?.simulationData?.mainTopic || result?.mainTopic;
+			const relatedConcepts = result?.simulationData?.relatedConcepts || result?.relatedConcepts;
+
+			if (mainTopic) {
+				AnalyticsTracker.trackTopics(userId, [mainTopic, ...(relatedConcepts || [])])
+					.catch((err) => console.error("[SimulationService] Error tracking topics:", err));
+			}
+
+			if (!result.simulationData) {
+				return {
+					success: false,
+					message: "Failed to generate simulation details",
+				};
 			}
 
 			return {

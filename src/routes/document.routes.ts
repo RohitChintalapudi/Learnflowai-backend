@@ -11,7 +11,7 @@ router.use(authMiddleware);
 
 // Document ingestion routes
 router.post(
-	"/upload",
+	"/",
 	uploadMiddleware.single("file"),
 	documentController.uploadDocument.bind(documentController),
 );

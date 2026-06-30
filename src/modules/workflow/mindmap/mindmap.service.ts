@@ -44,7 +44,17 @@ export class MindMapService {
 				},
 			});
 
-			// 4. Analytics Event
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Mind map generated",
+					message: `Mind map "${result.mainTopic || "Mind Map"}" generated successfully for "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics Event
 			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_MINDMAP_GENERATED, {
 				documentId,
 			});

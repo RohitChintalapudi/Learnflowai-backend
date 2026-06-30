@@ -93,7 +93,19 @@ const buildContextNode = async (state: typeof GraphState.State) => {
 };
 
 const QuestionsSchema = z.object({
-	questions: z.array(
+	basic: z.array(
+		z.object({
+			q: z.string(),
+			a: z.string(),
+		}),
+	),
+	intermediate: z.array(
+		z.object({
+			q: z.string(),
+			a: z.string(),
+		}),
+	),
+	advanced: z.array(
 		z.object({
 			q: z.string(),
 			a: z.string(),
@@ -106,43 +118,40 @@ const generateQuestionsNode = async (state: typeof GraphState.State) => {
 
 	const trace = langfuse.trace({ id: traceId });
 
-	const generateLevel = async (difficulty: string, modelName: string) => {
-		const generation = trace.generation({
-			name: `generate-${difficulty.toLowerCase()}-questions`,
-			model: modelName,
-			input: { highlightedText, context, difficulty },
-		});
+	const generation = trace.generation({
+		name: "generate-all-interview-questions",
+		model: "llama-3.1-8b-instant",
+		input: { highlightedText, context },
+	});
 
-		const groqClient = getGroqClient(modelName);
-		
-		// Use Zod schema validation
-		const structuredLlm = groqClient.withStructuredOutput(QuestionsSchema, { name: "Questions" });
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
+	
+	// Use JSON mode for validation to avoid Groq tool-use parsing issues
+	const structuredLlm = groqClient.withStructuredOutput(QuestionsSchema, {
+		name: "Questions",
+		method: "jsonMode",
+	});
 
-		const sysPrompt = INTERVIEW_QUESTIONS_SYSTEM_PROMPT.replace("{difficulty}", difficulty);
-		const usrPrompt = INTERVIEW_QUESTIONS_USER_PROMPT.replace("{highlightedText}", highlightedText)
-			.replace("{context}", context)
-			.replace("{difficulty}", difficulty);
+	const usrPrompt = INTERVIEW_QUESTIONS_USER_PROMPT
+		.split("{highlightedText}").join(highlightedText)
+		.split("{context}").join(context);
 
-		const response = await structuredLlm.invoke([
-			new SystemMessage(sysPrompt),
-			new HumanMessage(usrPrompt),
-		]);
-
-		generation.end({
-			output: response,
-		});
-
-		return response.questions;
-	};
-
-	// Execute 3 parallel generations to drastically cut down time
-	const [basic, intermediate, advanced] = await Promise.all([
-		generateLevel("Basic", "llama-3.1-8b-instant"),
-		generateLevel("Intermediate", "llama-3.1-8b-instant"),
-		generateLevel("Advanced", "llama-3.3-70b-versatile"),
+	const response = await structuredLlm.invoke([
+		new SystemMessage(INTERVIEW_QUESTIONS_SYSTEM_PROMPT),
+		new HumanMessage(usrPrompt),
 	]);
 
-	return { questions: { basic, intermediate, advanced } };
+	generation.end({
+		output: response,
+	});
+
+	return {
+		questions: {
+			basic: response.basic,
+			intermediate: response.intermediate,
+			advanced: response.advanced,
+		},
+	};
 };
 
 const workflow = new StateGraph(GraphState)

@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { openAPI } from "better-auth/plugins";
 import { env } from "../config/env";
 import { prisma } from "../database";
+import { hashPassword, verifyPassword } from "./password";
 
 export const allowedOrigins = [
 	env.BETTER_AUTH_URL,
@@ -21,6 +22,10 @@ export const auth = betterAuth({
 	trustedOrigins: allowedOrigins,
 	emailAndPassword: {
 		enabled: true,
+		password: {
+			hash: hashPassword,
+			verify: ({ hash, password }) => verifyPassword(password, hash),
+		},
 	},
 	socialProviders: {
 		google: {

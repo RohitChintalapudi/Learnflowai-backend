@@ -9,10 +9,11 @@ import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 import analyticsRoute from "./modules/analytics/analytics.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
-
+import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 import profileRoute from "./modules/profile/profile.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import accountSettingsRoute from "./modules/settings/account/account.route";
+import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
 import settingsExportRoute from "./modules/settings/export/export.route";
 import analogyRoute from "./modules/workflow/analogy/analogy.route";
@@ -67,6 +68,7 @@ app.use("/api/settings/account", accountSettingsRoute);
 app.use("/api/settings/export", settingsExportRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);
+app.use("/api/analytics", analyticsRoute);
 app.use("/api/alerts", alertsRoute);
 
 app.get("/", (_req, res) => {

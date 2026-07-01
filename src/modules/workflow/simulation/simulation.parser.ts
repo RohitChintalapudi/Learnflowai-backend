@@ -56,6 +56,20 @@ export function parseAndSanitizeSimulation(
 	const title =
 		typeof sim.title === "string" && sim.title.trim() ? sim.title.trim() : fallbackTitle;
 
+	const mainTopic =
+		typeof sim.mainTopic === "string" && sim.mainTopic.trim()
+			? sim.mainTopic.trim()
+			: title;
+
+	const relatedConcepts: string[] = [];
+	if (Array.isArray(sim.relatedConcepts)) {
+		for (const rc of sim.relatedConcepts) {
+			if (typeof rc === "string" && rc.trim()) {
+				relatedConcepts.push(rc.trim());
+			}
+		}
+	}
+
 	const overview =
 		typeof sim.overview === "string" && sim.overview.trim()
 			? sim.overview.trim()
@@ -113,9 +127,9 @@ export function parseAndSanitizeSimulation(
 		}
 	}
 
-	// Limit to max 15 entities (as per rules/performance limits)
-	if (entities.length > 15) {
-		entities.length = 15;
+	// Limit to max 8 entities (as per rules/performance limits)
+	if (entities.length > 8) {
+		entities.length = 8;
 		// Re-populate entityIds set to match truncated list
 		entityIds.clear();
 		for (const ent of entities) {
@@ -186,9 +200,9 @@ export function parseAndSanitizeSimulation(
 		}
 	}
 
-	// Limit to max 20 steps (as per rules/performance limits)
-	if (steps.length > 20) {
-		steps.length = 20;
+	// Limit to max 10 steps (as per rules/performance limits)
+	if (steps.length > 10) {
+		steps.length = 10;
 	}
 
 	// If no steps were generated, create a default one
@@ -204,6 +218,8 @@ export function parseAndSanitizeSimulation(
 
 	return {
 		title,
+		mainTopic,
+		relatedConcepts,
 		simulationType,
 		difficulty,
 		overview,

@@ -20,6 +20,8 @@ export interface SimulationOutput {
 	entities: SimulationEntity[];
 	steps: SimulationStep[];
 	summary: string;
+	mainTopic?: string;
+	relatedConcepts?: string[];
 }
 
 export interface SimulationResponse {

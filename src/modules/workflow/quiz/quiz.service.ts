@@ -59,7 +59,17 @@ export class QuizService {
 				},
 			});
 
-			// 4. Analytics Event
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Quiz generated",
+					message: `A new quiz of ${totalQuestions} questions has been generated successfully for "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics Event
 			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_QUIZ_GENERATED, {
 				documentId,
 			});
@@ -112,7 +122,10 @@ export class QuizService {
 		topicsToImprove: string[],
 	) {
 		try {
-			const quiz = await prisma.quizSet.findUnique({ where: { id: quizId } });
+			const quiz = await prisma.quizSet.findUnique({
+				where: { id: quizId },
+				include: { document: { select: { title: true } } }
+			});
 			if (!quiz) {
 				return { success: false, message: "Quiz not found" };
 			}
@@ -127,6 +140,16 @@ export class QuizService {
 					totalQuestions,
 					status: "COMPLETED",
 					topicsToImprove: topicsToImprove as any,
+				},
+			});
+
+			// Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Quiz completed",
+					message: `You completed the quiz for "${quiz.document?.title || "Document"}" with a score of ${score}/${totalQuestions}.`,
+					type: "success",
 				},
 			});
 

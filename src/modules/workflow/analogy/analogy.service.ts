@@ -45,7 +45,17 @@ export class AnalogyService {
 				},
 			});
 
-			// 4. Analytics
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Analogy generated",
+					message: `Analogy "${workflowState.analogyData.title || "Analogy"}" generated successfully for "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics
 			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_ANALOGY_GENERATED, {
 				documentId,
 			});

@@ -55,7 +55,7 @@ export class AlertsController {
         return;
       }
 
-      await this.alertsService.deleteAlert(user.id, id);
+      await this.alertsService.deleteAlert(user.id, id as string);
       res.status(200).json({ success: true, message: "Alert deleted successfully" });
     } catch (error: any) {
       console.error("Error in deleteAlert:", error);

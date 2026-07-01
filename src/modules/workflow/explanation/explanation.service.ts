@@ -15,7 +15,7 @@ export class ExplanationService {
 			// 1. Verify document exists and check ownership
 			const document = await prisma.document.findUnique({
 				where: { id: documentId },
-				select: { id: true, uploadedBy: true },
+				select: { id: true, uploadedBy: true, title: true },
 			});
 
 			if (!document) {
@@ -43,7 +43,17 @@ export class ExplanationService {
 				},
 			});
 
-			// 4. Analytics Event
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Explanation generated",
+					message: `AI Explanation generated successfully for concept in "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics Event
 			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_EXPLANATION_GENERATED, {
 				documentId,
 			});

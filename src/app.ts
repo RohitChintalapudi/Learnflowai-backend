@@ -9,10 +9,11 @@ import { errorHandler } from "./middleware/error-handler";
 import { notFound } from "./middleware/not-found";
 import analyticsRoute from "./modules/analytics/analytics.route";
 import dashboardRoute from "./modules/dashboard/dashboard.route";
-
+import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 import profileRoute from "./modules/profile/profile.route";
 import quizDashboardRoute from "./modules/quiz-dashboard/quizDashboard.route";
 import accountSettingsRoute from "./modules/settings/account/account.route";
+import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
 import settingsExportRoute from "./modules/settings/export/export.route";
 import analogyRoute from "./modules/workflow/analogy/analogy.route";
@@ -23,8 +24,6 @@ import notesRoute from "./modules/workflow/notes/notes.route";
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
-import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
-import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 
 const app: Express = express();
 
@@ -38,27 +37,6 @@ app.use(
 );
 
 registerSwaggerDocs(app);
-
-// Rewrite root auth paths (e.g. /sign-up, /sign-in, /sign-out, /session, /callback) to Better Auth's routes
-app.use((req, res, next) => {
-	const authPaths = [
-		"sign-up",
-		"sign-in",
-		"sign-out",
-		"session",
-		"get-session",
-		"reset-password",
-		"change-password",
-		"verify-email",
-		"callback",
-		"forget-password",
-	];
-	const firstSegment = req.path.split("/")[1];
-	if (authPaths.includes(firstSegment)) {
-		req.url = `/api/auth${req.url}`;
-	}
-	next();
-});
 
 // Express 5
 app.all("/api/auth/{*any}", toNodeHandler(auth));
@@ -86,6 +64,7 @@ app.use("/api/settings/account", accountSettingsRoute);
 app.use("/api/settings/export", settingsExportRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);
+app.use("/api/analytics", analyticsRoute);
 
 app.get("/", (_req, res) => {
 	res.redirect("http://localhost:5173/login");

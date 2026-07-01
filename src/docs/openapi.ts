@@ -128,6 +128,100 @@ export const openApiDocument: OpenApiDocument = {
 				},
 			},
 		},
+		"/api/settings/storage": {
+			get: {
+				tags: ["Settings"],
+				summary: "Get storage details",
+				description: "Retrieves the authenticated user's storage usage metrics, total allowance, and item-by-item breakdown.",
+				operationId: "getStorageDetails",
+				responses: {
+					"200": {
+						description: "Successfully retrieved storage metrics.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										data: {
+											type: "object",
+											properties: {
+												totalLimit: { type: "integer", example: 2147483648 },
+												totalUsed: { type: "integer", example: 713031680 },
+												percentageUsed: { type: "integer", example: 33 },
+												breakdown: {
+													type: "object",
+													properties: {
+														documents: {
+															type: "object",
+															properties: {
+																count: { type: "integer", example: 142 },
+																sizeBytes: { type: "integer", example: 471859200 }
+															}
+														},
+														notes: {
+															type: "object",
+															properties: {
+																count: { type: "integer", example: 380 },
+																sizeBytes: { type: "integer", example: 125829120 }
+															}
+														},
+														quizzes: {
+															type: "object",
+															properties: {
+																count: { type: "integer", example: 85 },
+																sizeBytes: { type: "integer", example: 110100480 }
+															}
+														},
+														conversations: {
+															type: "object",
+															properties: {
+																count: { type: "integer", example: 112 },
+																sizeBytes: { type: "integer", example: 5242880 }
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						description: "Unauthorized"
+					}
+				}
+			}
+		},
+		"/api/settings/storage/delete-cache": {
+			post: {
+				tags: ["Settings"],
+				summary: "Clear storage cache",
+				description: "Performs database cache storage operations for the user.",
+				operationId: "deleteStorageCache",
+				responses: {
+					"200": {
+						description: "Cache cleared successfully.",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										message: { type: "string", example: "Cache deleted successfully" }
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						description: "Unauthorized"
+					}
+				}
+			}
+		},
 		"/api/health": {
 			get: {
 				tags: ["Health"],

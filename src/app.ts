@@ -16,6 +16,7 @@ import accountSettingsRoute from "./modules/settings/account/account.route";
 import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 import deleteAccountRoute from "./modules/settings/delete-account/deleteAccount.route";
 import settingsExportRoute from "./modules/settings/export/export.route";
+import settingsStorageRoute from "./modules/settings/storage/storage.route";
 import analogyRoute from "./modules/workflow/analogy/analogy.route";
 import explanationRoute from "./modules/workflow/explanation/explanation.route";
 import interviewQuestionsRoute from "./modules/workflow/interview-questions/interviewQuestions.route";
@@ -24,9 +25,7 @@ import notesRoute from "./modules/workflow/notes/notes.route";
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
-import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
 
-import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
 import alertsRoute from "./modules/alerts/alerts.route";
 
 const app: Express = express();
@@ -65,6 +64,7 @@ app.use("/api/quizzes", quizDashboardRoute);
 app.use("/api/profile", profileRoute);
 app.use("/api/learning-history", learningHistoryRoute);
 app.use("/api/settings/account", accountSettingsRoute);
+app.use("/api/settings/storage", settingsStorageRoute);
 app.use("/api/settings/export", settingsExportRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);

@@ -4,61 +4,160 @@ import { getGroqClient } from "../../lib/ai/groq";
 import { SUGGESTIONS_SYSTEM_PROMPT, SUGGESTIONS_USER_PROMPT } from "./learningHistory.prompts";
 
 export class LearningHistoryService {
-  async getLearningHistory(userId: string, limit: number = 50) {
+  async getLearningHistory(
+    userId: string, 
+    limit: number = 50, 
+    options: {
+      search?: string;
+      feature?: string;
+      dateRange?: string;
+      sort?: string;
+    } = {}
+  ) {
     if (!userId || typeof userId !== "string" || userId.trim() === "") {
       return [];
     }
 
-    const [explanations, notes, generatedQuizzes, quizSets, interviewQuestions, simulations] = await Promise.all([
-      prisma.explanation.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.generatedNote.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.generatedQuiz.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.quizSet.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.interviewQuestionSet.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.generatedSimulation.findMany({
-        where: { userId },
-        include: { document: { select: { title: true } } },
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
+    const { search, feature, dateRange, sort } = options;
 
-    const timeline: any[] = [];
+    // Build common where conditions
+    const baseWhere: any = { userId };
 
-    explanations.forEach((e: any) => timeline.push({ ...e, activityType: "Explanation" }));
-    notes.forEach((n: any) => timeline.push({ ...n, activityType: "GeneratedNote" }));
-    generatedQuizzes.forEach((q: any) => timeline.push({ ...q, activityType: "GeneratedQuiz" }));
-    quizSets.forEach((q: any) => timeline.push({ ...q, activityType: "QuizSet" }));
-    interviewQuestions.forEach((i: any) => timeline.push({ ...i, activityType: "InterviewQuestionSet" }));
-    simulations.forEach((s: any) => timeline.push({ ...s, activityType: "GeneratedSimulation" }));
+    // Apply date range filter
+    if (dateRange && dateRange !== "All Time") {
+      const now = new Date();
+      if (dateRange === "Today") {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        baseWhere.createdAt = { gte: start };
+      } else if (dateRange === "7 Days") {
+        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        baseWhere.createdAt = { gte: start };
+      } else if (dateRange === "30 Days") {
+        const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        baseWhere.createdAt = { gte: start };
+      }
+    }
 
-    // Sort descending by created time
-    timeline.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Prepare search filters for Prisma
+    const getSearchFilter = (hasTitle: boolean = false) => {
+      if (!search || search.trim() === "") return {};
+      const trimmedSearch = search.trim();
+      const conditions: any[] = [
+        { document: { title: { contains: trimmedSearch, mode: "insensitive" } } },
+        { highlightedText: { contains: trimmedSearch, mode: "insensitive" } }
+      ];
+      if (hasTitle) {
+        conditions.push({ title: { contains: trimmedSearch, mode: "insensitive" } });
+      }
+      return { OR: conditions };
+    };
+
+    // Determine which features to fetch
+    const fetchExplanation = !feature || feature === "All" || feature === "Explanation";
+    const fetchNotes = !feature || feature === "All" || feature === "Notes";
+    const fetchQuiz = !feature || feature === "All" || feature === "Quiz";
+    const fetchInterview = !feature || feature === "All" || feature === "Interview";
+    const fetchMindMap = !feature || feature === "All" || feature === "Mind Map";
+    const fetchAnalogy = !feature || feature === "All" || feature === "Analogy";
+    const fetchSimulation = !feature || feature === "All" || feature === "Simulation";
+
+    const fetchPromises: Promise<any[]>[] = [];
+
+    if (fetchExplanation) {
+      fetchPromises.push(
+        prisma.explanation.findMany({
+          where: { ...baseWhere, ...getSearchFilter() },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "Explanation" })))
+      );
+    }
+
+    if (fetchNotes) {
+      fetchPromises.push(
+        prisma.generatedNote.findMany({
+          where: { ...baseWhere, ...getSearchFilter(true) },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "GeneratedNote" })))
+      );
+    }
+
+    if (fetchQuiz) {
+      fetchPromises.push(
+        prisma.generatedQuiz.findMany({
+          where: { ...baseWhere, ...getSearchFilter(true) },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "GeneratedQuiz" })))
+      );
+      fetchPromises.push(
+        prisma.quizSet.findMany({
+          where: { ...baseWhere, ...getSearchFilter() },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "QuizSet" })))
+      );
+    }
+
+    if (fetchInterview) {
+      fetchPromises.push(
+        prisma.interviewQuestionSet.findMany({
+          where: { ...baseWhere, ...getSearchFilter() },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "InterviewQuestionSet" })))
+      );
+    }
+
+    if (fetchMindMap) {
+      fetchPromises.push(
+        prisma.generatedMindMap.findMany({
+          where: { ...baseWhere, ...getSearchFilter(true) },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "GeneratedMindMap" })))
+      );
+    }
+
+    if (fetchAnalogy) {
+      fetchPromises.push(
+        prisma.generatedAnalogy.findMany({
+          where: { ...baseWhere, ...getSearchFilter(true) },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "GeneratedAnalogy" })))
+      );
+    }
+
+    if (fetchSimulation) {
+      fetchPromises.push(
+        prisma.generatedSimulation.findMany({
+          where: { ...baseWhere, ...getSearchFilter() },
+          include: { document: { select: { title: true } } },
+          take: limit,
+          orderBy: { createdAt: sort === "Oldest" ? "asc" : "desc" },
+        }).then(items => items.map(item => ({ ...item, activityType: "GeneratedSimulation" })))
+      );
+    }
+
+    const results = await Promise.all(fetchPromises);
+    const timeline = results.flat();
+
+    // Sort descending or ascending by created time
+    timeline.sort((a, b) => {
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      return sort === "Oldest" ? timeA - timeB : timeB - timeA;
+    });
 
     return timeline.slice(0, limit);
   }

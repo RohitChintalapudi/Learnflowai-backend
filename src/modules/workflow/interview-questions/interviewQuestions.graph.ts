@@ -1,17 +1,17 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import { Langfuse } from "langfuse";
+import { z } from "zod";
 import { env } from "../../../config/env";
 import { generateEmbedding } from "../../../lib/ai/embeddings";
 import { getGroqClient } from "../../../lib/ai/groq";
 import { retrieveRelevantChunks } from "../../../lib/rag/retrieveRelevantChunks";
-import { conceptExpansionNode, topicDetectionNode } from "../shared/topicExpansion.nodes";
+import { topicDetectionNode } from "../shared/topicExpansion.nodes";
 import { TopicExpansionState } from "../shared/topicExpansion.types";
 import {
 	INTERVIEW_QUESTIONS_SYSTEM_PROMPT,
 	INTERVIEW_QUESTIONS_USER_PROMPT,
 } from "./interviewQuestions.prompts";
-import { parseInterviewQuestionsResponse } from "./interviewQuestions.types";
 
 const langfuse = new Langfuse({
 	publicKey: env.LANGFUSE_PUBLIC_KEY,
@@ -30,30 +30,39 @@ const GraphState = Annotation.Root({
 });
 
 const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
-	const { highlightedText, documentId, traceId, mainTopic, relatedConcepts, subtopics } = state;
+	const { highlightedText, documentId, traceId } = state;
 
 	const trace = langfuse.trace({ id: traceId });
 	const span = trace.span({
 		name: "retrieve-chunks",
-		input: { highlightedText, mainTopic, relatedConcepts, subtopics, documentId },
+		input: { highlightedText, documentId },
 	});
 
-	const startTime = Date.now();
+	// 1. Generate embedding for query using only the highlighted text for speed
+	const embedding = await generateEmbedding(highlightedText);
 
-	// 1. Generate embedding for expanded query
-	const query = `${highlightedText} ${mainTopic || ""} ${(relatedConcepts || []).join(" ")} ${(subtopics || []).join(" ")}`;
-	const embedding = await generateEmbedding(query);
-
-	// 2-5. Fetch and sort top chunks
+	// 2. Fetch top chunks
 	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
 
-	const duration = Date.now() - startTime;
 	span.end({
 		output: { chunkCount: chunks.length, retrievedChunks: chunks },
 	});
 
 	return {
 		retrievedChunks: chunks,
+	};
+};
+
+const analyzeAndRetrieveNode = async (state: typeof GraphState.State) => {
+	// Run topic detection and retrieval in parallel to completely hide retrieval latency
+	const [topicResult, retrieveResult] = await Promise.all([
+		topicDetectionNode(state),
+		retrieveRelevantChunksNode(state),
+	]);
+
+	return {
+		...topicResult,
+		...retrieveResult,
 	};
 };
 
@@ -76,88 +85,81 @@ const buildContextNode = async (state: typeof GraphState.State) => {
 
 	context += "Document Context:\n";
 
-	// Target: 4-5 chunks max 3000 tokens (approx)
-	// We already limit chunks to 5 in retrieveRelevantChunksNode
-	retrievedChunks.forEach((chunk, index) => {
+	retrievedChunks.forEach((chunk: any, index: number) => {
 		context += "Chunk " + (index + 1) + ":\n" + chunk.content + "\n\n";
 	});
 
 	return { context };
 };
 
+const QuestionsSchema = z.object({
+	basic: z.array(
+		z.object({
+			q: z.string(),
+			a: z.string(),
+		}),
+	),
+	intermediate: z.array(
+		z.object({
+			q: z.string(),
+			a: z.string(),
+		}),
+	),
+	advanced: z.array(
+		z.object({
+			q: z.string(),
+			a: z.string(),
+		}),
+	),
+});
+
 const generateQuestionsNode = async (state: typeof GraphState.State) => {
 	const { highlightedText, context, traceId } = state;
 
 	const trace = langfuse.trace({ id: traceId });
 
-	const userPrompt = INTERVIEW_QUESTIONS_USER_PROMPT.replace(
-		"{highlightedText}",
-		highlightedText,
-	).replace("{context}", context);
-
 	const generation = trace.generation({
-		name: "generate-interview-questions",
-		model: "llama-3.3-70b-versatile",
-		modelParameters: {
-			temperature: 0.4,
-			maxTokens: 2000,
-			responseFormat: "json_object",
-		},
-		input: [
-			{ role: "system", content: INTERVIEW_QUESTIONS_SYSTEM_PROMPT },
-			{ role: "user", content: userPrompt },
-		],
+		name: "generate-all-interview-questions",
+		model: "llama-3.1-8b-instant",
+		input: { highlightedText, context },
 	});
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
+	
+	// Use JSON mode for validation to avoid Groq tool-use parsing issues
+	const structuredLlm = groqClient.withStructuredOutput(QuestionsSchema, {
+		name: "Questions",
+		method: "jsonMode",
+	});
 
-	let parsedQuestions: {
-		basic: { q: string; a: string }[];
-		intermediate: { q: string; a: string }[];
-		advanced: { q: string; a: string }[];
-	} = { basic: [], intermediate: [], advanced: [] };
+	const usrPrompt = INTERVIEW_QUESTIONS_USER_PROMPT
+		.split("{highlightedText}").join(highlightedText)
+		.split("{context}").join(context);
 
-	// Attempt JSON generation and parsing up to 2 times
-	for (let attempt = 1; attempt <= 2; attempt++) {
-		try {
-			const response = await groqClient.invoke(
-				[new SystemMessage(INTERVIEW_QUESTIONS_SYSTEM_PROMPT), new HumanMessage(userPrompt)],
-				{
-					response_format: { type: "json_object" },
-				},
-			);
-
-			const rawResponse = response.content as string;
-			parsedQuestions = parseInterviewQuestionsResponse(rawResponse);
-			break; // Success
-		} catch (error) {
-			if (attempt === 2) {
-				generation.end({ level: "ERROR", statusMessage: (error as Error).message });
-				throw new Error(
-					"Failed to generate valid JSON questions after 2 attempts. Last error: " +
-						(error as Error).message,
-				);
-			}
-		}
-	}
+	const response = await structuredLlm.invoke([
+		new SystemMessage(INTERVIEW_QUESTIONS_SYSTEM_PROMPT),
+		new HumanMessage(usrPrompt),
+	]);
 
 	generation.end({
-		output: parsedQuestions,
+		output: response,
 	});
 
-	return { questions: parsedQuestions };
+	return {
+		questions: {
+			basic: response.basic,
+			intermediate: response.intermediate,
+			advanced: response.advanced,
+		},
+	};
 };
 
 const workflow = new StateGraph(GraphState)
-	.addNode("TopicDetection", topicDetectionNode)
-	.addNode("ConceptExpansion", conceptExpansionNode)
-	.addNode("RetrieveRelevantChunks", retrieveRelevantChunksNode)
+	.addNode("AnalyzeAndRetrieve", analyzeAndRetrieveNode)
 	.addNode("BuildContext", buildContextNode)
 	.addNode("GenerateQuestions", generateQuestionsNode)
-	.addEdge(START, "TopicDetection")
-	.addEdge("TopicDetection", "ConceptExpansion")
-	.addEdge("ConceptExpansion", "RetrieveRelevantChunks")
-	.addEdge("RetrieveRelevantChunks", "BuildContext")
+	.addEdge(START, "AnalyzeAndRetrieve")
+	.addEdge("AnalyzeAndRetrieve", "BuildContext")
 	.addEdge("BuildContext", "GenerateQuestions")
 	.addEdge("GenerateQuestions", END);
 

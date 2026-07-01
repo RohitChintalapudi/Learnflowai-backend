@@ -32,6 +32,7 @@ model User {
   generatedSimulations  GeneratedSimulation[]
   analyticsEvents       AnalyticsEvent[]
   userTopics            UserTopic[]
+  alerts                Alert[]
 
   @@map("users")
 }
@@ -275,3 +276,18 @@ model UserTopic {
   @@unique([userId, topic])
   @@map("user_topics")
 }
+
+model Alert {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  type      String   @default("info") // "info" | "success" | "warning" | "error"
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+

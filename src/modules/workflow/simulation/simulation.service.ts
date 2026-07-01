@@ -47,12 +47,22 @@ export class SimulationService {
 					highlightedText,
 					simulationType,
 					difficulty,
-					simulationData: (result.simulationData || {}) as Prisma.InputJsonValue,
+   simulationData: (result.simulationData || {}) as Prisma.InputJsonValue,
 				},
 			});
 
-			// 4. Analytics Event (run in background)
-			AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_SIMULATION_GENERATED, {
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Simulation generated",
+					message: `Educational simulation "${(result.simulationData as any)?.title || "Simulation"}" generated successfully for "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics Event
+			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_SIMULATION_GENERATED, {
 				documentId,
 				simulationType,
 				difficulty,

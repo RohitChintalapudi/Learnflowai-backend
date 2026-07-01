@@ -24,6 +24,10 @@ import notesRoute from "./modules/workflow/notes/notes.route";
 import quizRoute from "./modules/workflow/quiz/quiz.route";
 import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
+import learningHistoryRoute from "./modules/learning-history/learningHistory.route";
+
+import changePasswordRoute from "./modules/settings/change-password/changePassword.route";
+import alertsRoute from "./modules/alerts/alerts.route";
 
 const app: Express = express();
 
@@ -65,6 +69,7 @@ app.use("/api/settings/export", settingsExportRoute);
 app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);
 app.use("/api/analytics", analyticsRoute);
+app.use("/api/alerts", alertsRoute);
 
 app.get("/", (_req, res) => {
 	res.redirect("http://localhost:5173/login");

@@ -11,6 +11,17 @@ export class ExportService {
 			throw new Error("User not found");
 		}
 
+		const fetchDataset = async (name: string, queryFn: () => Promise<any>) => {
+			console.log(`Querying dataset: ${name}`);
+			try {
+				const result = await queryFn();
+				return result;
+			} catch (error: any) {
+				console.error(`Failed to query dataset ${name}:`, error.message);
+				return [];
+			}
+		};
+
 		// Fetch all user-related data concurrently using Promise.all
 		const [
 			notes,
@@ -25,17 +36,17 @@ export class ExportService {
 			userTopics,
 			documents,
 		] = await Promise.all([
-			prisma.generatedNote.findMany({ where: { userId } }),
-			prisma.generatedQuiz.findMany({ where: { userId } }),
-			prisma.generatedMindMap.findMany({ where: { userId } }),
-			prisma.analyticsEvent.findMany({ where: { userId } }),
-			prisma.explanation.findMany({ where: { userId } }),
-			prisma.interviewQuestionSet.findMany({ where: { userId } }),
-			prisma.quizSet.findMany({ where: { userId } }),
-			prisma.generatedAnalogy.findMany({ where: { userId } }),
-			prisma.generatedSimulation.findMany({ where: { userId } }),
-			prisma.userTopic.findMany({ where: { userId } }),
-			prisma.document.findMany({ where: { uploadedBy: userId } }),
+			fetchDataset("notes", () => prisma.generatedNote.findMany({ where: { userId } })),
+			fetchDataset("quizzes", () => prisma.generatedQuiz.findMany({ where: { userId } })),
+			fetchDataset("mindMaps", () => prisma.generatedMindMap.findMany({ where: { userId } })),
+			fetchDataset("analytics", () => prisma.analyticsEvent.findMany({ where: { userId } })),
+			fetchDataset("explanations", () => prisma.explanation.findMany({ where: { userId } })),
+			fetchDataset("interviewQuestionSets", () => prisma.interviewQuestionSet.findMany({ where: { userId } })),
+			fetchDataset("quizSets", () => prisma.quizSet.findMany({ where: { userId } })),
+			fetchDataset("analogies", () => prisma.generatedAnalogy.findMany({ where: { userId } })),
+			fetchDataset("simulations", () => prisma.generatedSimulation.findMany({ where: { userId } })),
+			fetchDataset("userTopics", () => prisma.userTopic.findMany({ where: { userId } })),
+			fetchDataset("documents", () => prisma.document.findMany({ where: { uploadedBy: userId } })),
 		]);
 
 		const { image, ...userWithoutImage } = user;

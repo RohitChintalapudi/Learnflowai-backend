@@ -9,7 +9,7 @@ export class LearningHistoryService {
       return [];
     }
 
-    const [explanations, notes, generatedQuizzes, quizSets, interviewQuestions] = await Promise.all([
+    const [explanations, notes, generatedQuizzes, quizSets, interviewQuestions, simulations] = await Promise.all([
       prisma.explanation.findMany({
         where: { userId },
         include: { document: { select: { title: true } } },
@@ -40,6 +40,12 @@ export class LearningHistoryService {
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
+      prisma.generatedSimulation.findMany({
+        where: { userId },
+        include: { document: { select: { title: true } } },
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
     ]);
 
     const timeline: any[] = [];
@@ -49,6 +55,7 @@ export class LearningHistoryService {
     generatedQuizzes.forEach((q: any) => timeline.push({ ...q, activityType: "GeneratedQuiz" }));
     quizSets.forEach((q: any) => timeline.push({ ...q, activityType: "QuizSet" }));
     interviewQuestions.forEach((i: any) => timeline.push({ ...i, activityType: "InterviewQuestionSet" }));
+    simulations.forEach((s: any) => timeline.push({ ...s, activityType: "GeneratedSimulation" }));
 
     // Sort descending by created time
     timeline.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -74,6 +81,7 @@ export class LearningHistoryService {
         if (item.activityType === "GeneratedNote") return `Generated notes on: ${item.title || item.highlightedText}`;
         if (item.activityType === "QuizSet") return `Took quiz for document: ${item.document?.title}, Score: ${item.score}/${item.totalQuestions}`;
         if (item.activityType === "InterviewQuestionSet") return `Generated interview questions on: ${item.highlightedText}`;
+        if (item.activityType === "GeneratedSimulation") return `Generated simulation on: ${item.highlightedText} (${item.simulationType})`;
         return null;
       })
       .filter(Boolean)

@@ -49,7 +49,7 @@ export class SimulationService {
 					highlightedText,
 					simulationType,
 					difficulty,
-					simulationData: result.simulationData || {},
+					simulationData: (result.simulationData as any) || {},
 				},
 			});
 

@@ -17,18 +17,18 @@ export class DeleteAccountController {
 				throw new AppError("Unauthorized", 401);
 			}
 
-			// Validate the confirmation text
+			// Validate the input
 			const parsed = deleteAccountSchema.safeParse(req.body);
 			if (!parsed.success) {
 				const errorMessage = parsed.error.issues[0]?.message || "Invalid input";
 				throw new AppError(errorMessage, 400);
 			}
 
-			await this.deleteAccountService.deleteUserAccount(userId);
+			await this.deleteAccountService.deleteUserAccount(userId, parsed.data.password);
 
 			res.status(200).json({
 				success: true,
-				message: "Account deleted successfully",
+				message: "Account deleted successfully.",
 			});
 		} catch (error) {
 			next(error);

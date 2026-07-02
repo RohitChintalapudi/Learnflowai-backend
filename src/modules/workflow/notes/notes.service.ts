@@ -16,7 +16,7 @@ export class NotesService {
 			// 1. Verify document exists and check ownership
 			const document = await prisma.document.findUnique({
 				where: { id: documentId },
-				select: { id: true, uploadedBy: true },
+				select: { id: true, uploadedBy: true, title: true },
 			});
 
 			if (!document) {
@@ -70,7 +70,17 @@ export class NotesService {
 				},
 			});
 
-			// 4. Analytics Event
+			// 4. Create In-App Alert
+			await prisma.alert.create({
+				data: {
+					userId,
+					title: "Notes generated",
+					message: `Revision notes "${result.notes.title || "Notes"}" generated successfully for "${document.title}".`,
+					type: "success",
+				},
+			});
+
+			// 5. Analytics Event
 			await AnalyticsTracker.trackEvent(userId, AnalyticsEventType.AI_NOTES_GENERATED, {
 				documentId,
 			});

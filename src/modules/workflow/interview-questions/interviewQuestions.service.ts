@@ -25,6 +25,7 @@ export class InterviewQuestionsService {
 			// If document was uploaded anonymously (uploadedBy is null), allow access.
 			// Otherwise, ensure the authenticated user owns it.
 			if (document.uploadedBy && document.uploadedBy !== userId) {
+				console.warn(`[InterviewQuestionsService] Unauthorized access: Document ${documentId} uploaded by ${document.uploadedBy}, but requested by user ${userId}`);
 				return { success: false, message: "Unauthorized document access" };
 			}
 

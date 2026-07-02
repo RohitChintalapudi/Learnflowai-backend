@@ -42,7 +42,7 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 
 	// Generate embedding on the highlightedText directly for fast parallel retrieval
 	const embedding = await generateEmbedding(highlightedText);
-	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
+	const chunks = await retrieveRelevantChunks(documentId, embedding, 3);
 
 	const duration = Date.now() - startTime;
 	span.end({
@@ -93,7 +93,7 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 
 	const trace = langfuse.trace({ id: traceId });
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 
 	let simulationData: any = null;
 	let lastError: Error | null = null;
@@ -115,10 +115,10 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 
 		const generation = trace.generation({
 			name: `generate-simulation-attempt-${attempt}`,
-			model: "llama-3.3-70b-versatile",
+			model: "llama-3.1-8b-instant",
 			modelParameters: {
 				temperature: attempt === 1 ? 0.2 : 0.4,
-				maxTokens: 2500,
+				maxTokens: 1500,
 			},
 			input: [
 				{ role: "system", content: SIMULATION_SYSTEM_PROMPT },
@@ -172,18 +172,10 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 };
 
 const workflow = new StateGraph(GraphState)
-	.addNode("TopicDetection", topicDetectionNode)
-	.addNode("ConceptExpansion", conceptExpansionNode)
 	.addNode("RetrieveRelevantChunks", retrieveRelevantChunksNode)
 	.addNode("BuildContext", buildContextNode)
 	.addNode("GenerateSimulation", generateSimulationNode)
-	// Start both parallel branches
-	.addEdge(START, "TopicDetection")
 	.addEdge(START, "RetrieveRelevantChunks")
-	// TopicDetection flows into ConceptExpansion (pass-through)
-	.addEdge("TopicDetection", "ConceptExpansion")
-	// Both branches join at BuildContext
-	.addEdge("ConceptExpansion", "BuildContext")
 	.addEdge("RetrieveRelevantChunks", "BuildContext")
 	.addEdge("BuildContext", "GenerateSimulation")
 	.addEdge("GenerateSimulation", END);

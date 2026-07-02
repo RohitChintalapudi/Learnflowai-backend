@@ -29,8 +29,11 @@ export class DocumentParserService {
 				const result = await this.parsePDF(file.buffer);
 				text = result.text;
 				totalPages = result.numpages;
-			} else if (extension === ".docx" || extension === ".doc") {
+			} else if (extension === ".docx") {
 				text = await this.parseDOCX(file.buffer);
+				totalPages = 1;
+			} else if (extension === ".doc") {
+				text = await this.parseDOC(file.buffer);
 				totalPages = 1;
 			} else if (extension === ".pptx" || extension === ".ppt") {
 				text = await this.parsePPTX(file.buffer);
@@ -68,8 +71,19 @@ export class DocumentParserService {
 	}
 
 	private async parseDOCX(buffer: Buffer): Promise<string> {
-		const result = await mammoth.extractRawText({ buffer });
-		return result.value;
+		try {
+			const result = await mammoth.extractRawText({ buffer });
+			return result.value;
+		} catch (error) {
+			console.warn("mammoth failed to parse DOCX, falling back to officeparser:", error);
+			const ast = await parseOffice(buffer);
+			return ast.toText();
+		}
+	}
+
+	private async parseDOC(buffer: Buffer): Promise<string> {
+		const ast = await parseOffice(buffer);
+		return ast.toText();
 	}
 
 	private async parsePPTX(buffer: Buffer): Promise<string> {

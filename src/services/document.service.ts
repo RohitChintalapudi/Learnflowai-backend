@@ -109,6 +109,7 @@ export class DocumentService {
 				fileType: true,
 				fileUrl: true,
 				totalPages: true,
+				uploadedBy: true,
 			},
 		});
 	}

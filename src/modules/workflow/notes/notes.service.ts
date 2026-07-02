@@ -1,7 +1,8 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../../database";
 import { AnalyticsEventType, AnalyticsTracker } from "../../analytics/analytics.tracker";
 import { runNotesWorkflow } from "./notes.graph";
-import type { NotesResponse } from "./notes.types";
+import type { GeneratedNotes, NotesResponse } from "./notes.types";
 
 export class NotesService {
 	public async generateNotes(
@@ -28,10 +29,31 @@ export class NotesService {
 				return { success: false, message: "Unauthorized document access" };
 			}
 
+			// Check if a note already exists for this text & document & user (Query Caching)
+			const existingNote = await prisma.generatedNote.findFirst({
+				where: {
+					userId,
+					documentId,
+					highlightedText: {
+						equals: highlightedText.trim(),
+						mode: "insensitive",
+					},
+				},
+			});
+
+			if (existingNote) {
+				return {
+					success: true,
+					notes: existingNote.notes as unknown as GeneratedNotes,
+					retrievedChunks: 0,
+					noteId: existingNote.id,
+				};
+			}
+
 			// 2. Run LangGraph workflow
 			const result = await runNotesWorkflow(documentId, highlightedText, userId);
 
-			const workflowTime = Date.now() - startTime;
+			console.log(`AI Notes workflow completed in ${Date.now() - startTime}ms`);
 
 			if (!result.notes) {
 				return { success: false, message: "Parsing failure: Unable to generate structured notes." };
@@ -44,7 +66,7 @@ export class NotesService {
 					documentId,
 					highlightedText,
 					title: result.notes.title,
-					notes: result.notes as any, // Store as JSON
+					notes: result.notes as unknown as Prisma.InputJsonValue,
 				},
 			});
 
@@ -53,11 +75,17 @@ export class NotesService {
 				documentId,
 			});
 
-			if (result?.mainTopic) {
-				await AnalyticsTracker.trackTopics(userId, [
-					result.mainTopic,
-					...(result.relatedConcepts || []),
-				]);
+			if (result.notes) {
+				const mainTopic = result.notes.title;
+				const relatedConcepts = (result.notes.relatedConcepts || []).map((c: string) => {
+					const colonIdx = c.indexOf(":");
+					if (colonIdx !== -1) {
+						return c.substring(0, colonIdx).trim();
+					}
+					return c.trim();
+				});
+
+				await AnalyticsTracker.trackTopics(userId, [mainTopic, ...relatedConcepts]);
 			}
 
 			return {
@@ -66,11 +94,13 @@ export class NotesService {
 				retrievedChunks: result.retrievedChunks.length,
 				noteId: generatedNote.id,
 			};
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("Error generating notes:", error);
+			const errorMessage =
+				error instanceof Error ? error.message : "An error occurred while generating the notes";
 			return {
 				success: false,
-				message: error?.message || "An error occurred while generating the notes",
+				message: errorMessage,
 			};
 		}
 	}
@@ -98,7 +128,7 @@ export class NotesService {
 			});
 
 			return { success: true };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("Error deleting note:", error);
 			return { success: false, message: "An error occurred while deleting the note" };
 		}
@@ -111,7 +141,7 @@ export class NotesService {
 				orderBy: { createdAt: "desc" },
 			});
 			return { success: true, notes };
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("Error fetching notes:", error);
 			return { success: false, message: "An error occurred while fetching notes" };
 		}

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getHistory, getSuggestions } from "./learningHistory.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
+import { getHistory, getSuggestions } from "./learningHistory.controller";
 
 const router: Router = Router();
 

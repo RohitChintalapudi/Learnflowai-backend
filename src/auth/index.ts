@@ -1,2 +1,1 @@
-export { auth, allowedOrigins } from "./auth";
-
+export { allowedOrigins, auth } from "./auth";

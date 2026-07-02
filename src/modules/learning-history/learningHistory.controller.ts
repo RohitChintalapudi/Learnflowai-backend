@@ -1,15 +1,21 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { LearningHistoryService } from "./learningHistory.service";
 
 const learningHistoryService = new LearningHistoryService();
 
 export const getHistory = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user || !req.user.id) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
-    }
+	try {
+		if (!req.user || !req.user.id) {
+			res.status(401).json({ success: false, message: "Unauthorized" });
+			return;
+		}
 
+		const history = await learningHistoryService.getLearningHistory(req.user.id);
+		res.status(200).json({ success: true, data: history });
+	} catch (error) {
+		console.error("Error in getHistory:", error);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
     const search = req.query.search as string | undefined;
     const feature = req.query.feature as string | undefined;
     const dateRange = req.query.dateRange as string | undefined;
@@ -30,16 +36,16 @@ export const getHistory = async (req: Request, res: Response): Promise<void> => 
 };
 
 export const getSuggestions = async (req: Request, res: Response): Promise<void> => {
-  try {
-    if (!req.user || !req.user.id) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
-      return;
-    }
+	try {
+		if (!req.user || !req.user.id) {
+			res.status(401).json({ success: false, message: "Unauthorized" });
+			return;
+		}
 
-    const suggestions = await learningHistoryService.getPersonalizedSuggestions(req.user.id);
-    res.status(200).json({ success: true, data: suggestions });
-  } catch (error) {
-    console.error("Error in getSuggestions:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
+		const suggestions = await learningHistoryService.getPersonalizedSuggestions(req.user.id);
+		res.status(200).json({ success: true, data: suggestions });
+	} catch (error) {
+		console.error("Error in getSuggestions:", error);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
 };

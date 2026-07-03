@@ -51,19 +51,19 @@ export const getHistory = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-        const history = await learningHistoryService.getLearningHistory(req.user.id, limit, {
-            search,
-            feature,
-            dateRange,
-            sort,
-        });
+//         const history = await learningHistoryService.getLearningHistory(req.user.id, limit, {
+//             search,
+//             feature,
+//             dateRange,
+//             sort,
+//         });
 
-        res.status(200).json({ success: true, data: history });
-    } catch (error) {
-        console.error("Error in getHistory:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
-    }
-};
+//         res.status(200).json({ success: true, data: history });
+//     } catch (error) {
+//         console.error("Error in getHistory:", error);
+//         res.status(500).json({ success: false, message: "Internal server error" });
+//     }
+// };
 
 export const getSuggestions = async (req: Request, res: Response): Promise<void> => {
     try {

@@ -1,7 +1,7 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
+import { AppError } from "../../../utils/app-error";
 import { DeleteAccountService } from "./deleteAccount.service";
 import { deleteAccountSchema } from "./deleteAccount.validator";
-import { AppError } from "../../../utils/app-error";
 
 export class DeleteAccountController {
 	private deleteAccountService: DeleteAccountService;

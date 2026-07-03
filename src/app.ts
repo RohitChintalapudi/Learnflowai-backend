@@ -47,8 +47,15 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the uploads directory
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// Serve static files from the uploads directory with caching headers for fast reload
+app.use(
+	"/uploads",
+	express.static(path.join(process.cwd(), "uploads"), {
+		maxAge: "30d",
+		etag: true,
+		lastModified: true,
+	}),
+);
 
 app.use("/api/health", healthRouter);
 app.use("/api/documents", documentRouter);

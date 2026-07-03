@@ -26,9 +26,11 @@ export class ProfileService {
 		}
 
 		// Prefer profileImage if set, otherwise fallback to better-auth image
+		const rawImage = user.profileImage || user.image || null;
+		const cleanImage = (rawImage && !rawImage.includes("/undefined") && !rawImage.includes("/null")) ? rawImage : null;
 		return {
 			...user,
-			profileImage: user.profileImage || user.image || null,
+			profileImage: cleanImage,
 		};
 	}
 
@@ -62,9 +64,11 @@ export class ProfileService {
 			fields: Object.keys(data),
 		});
 
+		const rawImage = updatedUser.profileImage || updatedUser.image || null;
+		const cleanImage = (rawImage && !rawImage.includes("/undefined") && !rawImage.includes("/null")) ? rawImage : null;
 		return {
 			...updatedUser,
-			profileImage: updatedUser.profileImage || updatedUser.image || null,
+			profileImage: cleanImage,
 		};
 	}
 

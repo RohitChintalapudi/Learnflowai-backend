@@ -29,12 +29,12 @@ export const getHistory = async (req: Request, res: Response): Promise<void> => 
 
         const history = await learningHistoryService.getLearningHistory(
             req.user.id,
+            limit,
             {
                 search,
                 feature,
                 dateRange,
                 sort,
-                limit,
             }
         );
 

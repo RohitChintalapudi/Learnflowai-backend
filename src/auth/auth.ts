@@ -24,8 +24,8 @@ export const auth = betterAuth({
 	trustedOrigins: allowedOrigins,
 	advanced: {
 		defaultCookieAttributes: {
-			sameSite: env.NODE_ENV === "production" ? "none" : "lax",
-			secure: env.NODE_ENV === "production" ? true : false,
+			sameSite: "none",
+			secure: true,
 		},
 	},
 	emailAndPassword: {

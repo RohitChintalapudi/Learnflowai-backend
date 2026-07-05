@@ -9,6 +9,8 @@ export const allowedOrigins = [
 	env.BETTER_AUTH_URL,
 	"http://localhost:5173",
 	"http://localhost:5174",
+	"https://ai-doubt-clarification.vercel.app",
+	"https://ai-doubt-clarification.vercel.app/",
 	...(env.TRUSTED_ORIGINS ? env.TRUSTED_ORIGINS.split(",").map((o) => o.trim()) : []),
 ];
 

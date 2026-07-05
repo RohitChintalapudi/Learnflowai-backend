@@ -22,6 +22,12 @@ export const auth = betterAuth({
 	baseURL: env.BETTER_AUTH_URL,
 	errorURL: "http://localhost:5173/login",
 	trustedOrigins: allowedOrigins,
+	advanced: {
+		defaultCookieAttributes: {
+			sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+			secure: env.NODE_ENV === "production" ? true : false,
+		},
+	},
 	emailAndPassword: {
 		enabled: true,
 		password: {

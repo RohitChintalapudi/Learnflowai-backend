@@ -87,13 +87,22 @@ export class NotesService {
 
 			if (result.notes) {
 				const mainTopic = result.notes.title;
-				const relatedConcepts = (result.notes.relatedConcepts || []).map((c: string) => {
-					const colonIdx = c.indexOf(":");
-					if (colonIdx !== -1) {
-						return c.substring(0, colonIdx).trim();
-					}
-					return c.trim();
-				});
+				const relatedConcepts = (result.notes.relatedConcepts || [])
+					.map((c: any) => {
+						if (typeof c === "string") {
+							const colonIdx = c.indexOf(":");
+							if (colonIdx !== -1) {
+								return c.substring(0, colonIdx).trim();
+							}
+							return c.trim();
+						}
+						if (typeof c === "object" && c !== null) {
+							const val = c.concept || c.title || c.name || Object.values(c)[0];
+							return typeof val === "string" ? val.trim() : "";
+						}
+						return "";
+					})
+					.filter(Boolean);
 
 				await AnalyticsTracker.trackTopics(userId, [mainTopic, ...relatedConcepts]);
 			}

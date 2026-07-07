@@ -20,12 +20,20 @@ export const auth = betterAuth({
 	}),
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
-	errorURL: "http://localhost:5173/login",
+	errorURL: (() => {
+		try {
+			const url = new URL(env.BETTER_AUTH_URL);
+			if (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname.startsWith("192.168.")) {
+				return `http://${url.hostname}:5173/login`;
+			}
+		} catch {}
+		return "https://ai-doubt-clarification.vercel.app/login";
+	})(),
 	trustedOrigins: allowedOrigins,
 	advanced: {
 		defaultCookieAttributes: {
-			sameSite: "none",
-			secure: true,
+			sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+			secure: env.NODE_ENV === "production",
 		},
 	},
 	emailAndPassword: {

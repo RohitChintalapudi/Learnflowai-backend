@@ -78,8 +78,14 @@ app.use("/api/settings/change-password", changePasswordRoute);
 app.use("/api/analytics", analyticsRoute);
 app.use("/api/alerts", alertsRoute);
 
-app.get("/", (_req, res) => {
-	res.redirect("http://localhost:5173/login");
+app.get("/", (req, res) => {
+	const host = req.get("host")?.split(":")[0] || "localhost";
+	const isLocal = host === "localhost" || host === "127.0.0.1" || host.startsWith("192.168.");
+	if (isLocal) {
+		res.redirect(`http://${host}:5173/login`);
+	} else {
+		res.redirect("https://ai-doubt-clarification.vercel.app/login");
+	}
 });
 
 app.use(notFound);

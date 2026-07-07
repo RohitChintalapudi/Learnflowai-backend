@@ -8,7 +8,7 @@ export const getGroqClient = (modelName?: string) => {
 
 	return new ChatGroq({
 		apiKey: env.GROQ_API,
-		model: modelName || "llama-3.1-8b-instant",
+		model: modelName || "llama-3.3-70b-versatile",
 		temperature: 0.3,
 		maxTokens: 1500,
 	});

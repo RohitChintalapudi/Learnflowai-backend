@@ -60,7 +60,7 @@ const insightGenerationNode = async (state: typeof GraphState.State) => {
 
 	const generation = trace.generation({
 		name: "generate-coach-insights",
-		model: "llama-3.3-70b-versatile",
+		model: "llama-3.1-8b-instant",
 		modelParameters: {
 			temperature: 0.2,
 			maxTokens: 1000,
@@ -72,7 +72,7 @@ const insightGenerationNode = async (state: typeof GraphState.State) => {
 		],
 	});
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 	let insights: AIInsights | null = null;
 
 	try {

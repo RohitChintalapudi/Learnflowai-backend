@@ -93,7 +93,7 @@ const generateExplanationNode = async (state: typeof GraphState.State) => {
 
 	const generation = trace.generation({
 		name: "generate-explanation",
-		model: "llama-3.3-70b-versatile",
+		model: "llama-3.1-8b-instant",
 		modelParameters: {
 			temperature: 0.3,
 			maxTokens: 1500,
@@ -104,7 +104,7 @@ const generateExplanationNode = async (state: typeof GraphState.State) => {
 		],
 	});
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 
 	const response = await groqClient.invoke([
 		new SystemMessage(EXPLANATION_SYSTEM_PROMPT),

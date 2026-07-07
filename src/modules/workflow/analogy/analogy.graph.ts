@@ -88,7 +88,7 @@ const generateAnalogyNode = async (state: typeof GraphState.State) => {
 
 	const generation = trace.generation({
 		name: "generate-analogy",
-		model: "llama-3.3-70b-versatile",
+		model: "llama-3.1-8b-instant",
 		modelParameters: {
 			temperature: 0.5,
 			maxTokens: 2500,
@@ -99,7 +99,7 @@ const generateAnalogyNode = async (state: typeof GraphState.State) => {
 		],
 	});
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 
 	let analogyData: any = null;
 

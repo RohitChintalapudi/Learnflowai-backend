@@ -120,11 +120,11 @@ const generateQuestionsNode = async (state: typeof GraphState.State) => {
 
 	const generation = trace.generation({
 		name: "generate-all-interview-questions",
-		model: "llama-3.3-70b-versatile",
+		model: "llama-3.1-8b-instant",
 		input: { highlightedText, context },
 	});
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 	
 	// Use JSON mode for validation to avoid Groq tool-use parsing issues
 	const structuredLlm = groqClient.withStructuredOutput(QuestionsSchema, {

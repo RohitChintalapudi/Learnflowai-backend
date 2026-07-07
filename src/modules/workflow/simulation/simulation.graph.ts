@@ -93,7 +93,7 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 
 	const trace = langfuse.trace({ id: traceId });
 
-	const groqClient = getGroqClient("llama-3.3-70b-versatile");
+	const groqClient = getGroqClient("llama-3.1-8b-instant");
 
 	let simulationData: any = null;
 	let lastError: Error | null = null;
@@ -115,7 +115,7 @@ const generateSimulationNode = async (state: typeof GraphState.State) => {
 
 		const generation = trace.generation({
 			name: `generate-simulation-attempt-${attempt}`,
-			model: "llama-3.3-70b-versatile",
+			model: "llama-3.1-8b-instant",
 			modelParameters: {
 				temperature: attempt === 1 ? 0.2 : 0.4,
 				maxTokens: 1500,

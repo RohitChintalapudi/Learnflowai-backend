@@ -41,7 +41,7 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 	const embedding = await generateEmbedding(query);
 
 	// 2-5. Fetch and sort top chunks
-	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
+	const chunks = await retrieveRelevantChunks(documentId, embedding, 1);
 
 	const duration = Date.now() - startTime;
 	span.end({

@@ -36,7 +36,7 @@ const retrieveRelevantChunksAndBuildContextNode = async (state: typeof GraphStat
 	});
 
 	// Fetch and sort top chunks using full-text search with fallbacks
-	const chunks = await retrieveRelevantChunks(documentId, highlightedText, 5);
+	const chunks = await retrieveRelevantChunks(documentId, highlightedText, 1);
 
 	// Build context string
 	let context = "Document Context:\n";

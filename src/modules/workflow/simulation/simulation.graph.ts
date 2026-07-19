@@ -42,7 +42,7 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 
 	// Generate embedding on the highlightedText directly for fast parallel retrieval
 	const embedding = await generateEmbedding(highlightedText);
-	const chunks = await retrieveRelevantChunks(documentId, embedding, 3);
+	const chunks = await retrieveRelevantChunks(documentId, embedding, 1);
 
 	const duration = Date.now() - startTime;
 	span.end({

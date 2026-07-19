@@ -6,10 +6,12 @@ export const getGroqClient = (modelName?: string) => {
 		throw new Error("GROQ_API environment variable is missing");
 	}
 
-	// Route versatile requests to the faster, high-limit llama-3.1-8b-instant to prevent daily limit exhaustion
+	// Route versatile requests to the higher-limit llama-3.3-70b-versatile to prevent token limit exhaustion
 	const model = (!modelName || modelName === "llama-3.1-8b-instant")
-		? "llama-3.1-8b-instant"
+		? "llama-3.3-70b-versatile"
 		: modelName;
+
+	console.log(`[Groq Client] Initializing client with model: ${model}`);
 
 	return new ChatGroq({
 		apiKey: env.GROQ_API,

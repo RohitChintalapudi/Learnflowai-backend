@@ -41,7 +41,7 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 	const query = `${highlightedText} ${mainTopic || ""} ${(relatedConcepts || []).join(" ")} ${(subtopics || []).join(" ")}`;
 	const embedding = await generateEmbedding(query);
 
-	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
+	const chunks = await retrieveRelevantChunks(documentId, embedding, 1);
 
 	const duration = Date.now() - startTime;
 	span.end({

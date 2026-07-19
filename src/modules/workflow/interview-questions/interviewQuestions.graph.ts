@@ -42,7 +42,7 @@ const retrieveRelevantChunksNode = async (state: typeof GraphState.State) => {
 	const embedding = await generateEmbedding(highlightedText);
 
 	// 2. Fetch top chunks
-	const chunks = await retrieveRelevantChunks(documentId, embedding, 5);
+	const chunks = await retrieveRelevantChunks(documentId, embedding, 1);
 
 	span.end({
 		output: { chunkCount: chunks.length, retrievedChunks: chunks },

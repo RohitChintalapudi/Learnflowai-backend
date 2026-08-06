@@ -11,6 +11,10 @@ export const allowedOrigins = [
 	"http://localhost:5174",
 	env.FRONTEND_URL,
 	`${env.FRONTEND_URL}/`,
+	"https://learnflow-ai-prod.vercel.app",
+	"https://learnflow-ai-prod.vercel.app/",
+	"https://learnflowai-frontend.vercel.app",
+	"https://learnflowai-frontend.vercel.app/",
 	...(env.TRUSTED_ORIGINS ? env.TRUSTED_ORIGINS.split(",").map((o) => o.trim()) : []),
 ];
 

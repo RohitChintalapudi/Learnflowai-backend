@@ -3,6 +3,7 @@ import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
 import { allowedOrigins, auth } from "./auth";
+import { env } from "./config/env";
 import { registerSwaggerDocs } from "./docs/swagger";
 import { healthRouter } from "./features/health/routes/health-routes";
 import { errorHandler } from "./middleware/error-handler";
@@ -84,7 +85,7 @@ app.get("/", (req, res) => {
 	if (isLocal) {
 		res.redirect(`http://${host}:5173/login`);
 	} else {
-		res.redirect("https://ai-doubt-clarification.vercel.app/login");
+		res.redirect(`${env.FRONTEND_URL}/login`);
 	}
 });
 

@@ -9,8 +9,8 @@ export const allowedOrigins = [
 	env.BETTER_AUTH_URL,
 	"http://localhost:5173",
 	"http://localhost:5174",
-	"https://ai-doubt-clarification.vercel.app",
-	"https://ai-doubt-clarification.vercel.app/",
+	env.FRONTEND_URL,
+	`${env.FRONTEND_URL}/`,
 	...(env.TRUSTED_ORIGINS ? env.TRUSTED_ORIGINS.split(",").map((o) => o.trim()) : []),
 ];
 
@@ -27,7 +27,7 @@ export const auth = betterAuth({
 				return `http://${url.hostname}:5173/login`;
 			}
 		} catch {}
-		return "https://ai-doubt-clarification.vercel.app/login";
+		return `${env.FRONTEND_URL}/login`;
 	})(),
 	trustedOrigins: allowedOrigins,
 	advanced: {

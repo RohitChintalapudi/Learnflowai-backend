@@ -19,7 +19,7 @@ const envSchema = z.object({
 	GOOGLE_CLIENT_ID: z.string().min(1),
 	GOOGLE_CLIENT_SECRET: z.string().min(1),
 	TRUSTED_ORIGINS: z.string().optional(),
-	FRONTEND_URL: z.string().url().default("https://learnflowai-frontend.vercel.app"),
+	FRONTEND_URL: z.string().url().default("https://learnflow-ai-prod.vercel.app"),
 });
 
 const parsed = envSchema.safeParse(process.env);

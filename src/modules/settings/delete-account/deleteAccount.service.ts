@@ -3,7 +3,7 @@ import { verifyPassword } from "../../../auth/password";
 import { AppError } from "../../../utils/app-error";
 
 export class DeleteAccountService {
-	public async deleteUserAccount(userId: string, password: string): Promise<void> {
+	public async deleteUserAccount(userId: string, password?: string): Promise<void> {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			select: {
@@ -24,17 +24,19 @@ export class DeleteAccountService {
 		}
 
 		const passwordAccount = user.accounts.find((account) => Boolean(account.password));
-		if (!passwordAccount?.password) {
-			throw new AppError("Invalid password.", 400); // 400 or 401 per instructions
-		}
+		if (passwordAccount?.password) {
+			if (!password) {
+				throw new AppError("Password is required to delete this account.", 400);
+			}
 
-		const isPasswordCorrect = await verifyPassword(
-			password,
-			passwordAccount.password,
-		);
-		
-		if (!isPasswordCorrect) {
-			throw new AppError("Invalid password.", 400); // 400 or 401 per instructions
+			const isPasswordCorrect = await verifyPassword(
+				password,
+				passwordAccount.password,
+			);
+			
+			if (!isPasswordCorrect) {
+				throw new AppError("Invalid password.", 400);
+			}
 		}
 
 		await prisma.user.delete({

@@ -18,7 +18,10 @@ export const topicDetectionNode = async (state: any) => {
 			},
 		);
 
-		const parsed = JSON.parse(response.content as string);
+		const rawContent = response.content as string;
+		const jsonMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+		const jsonString = jsonMatch && jsonMatch[1] ? jsonMatch[1].trim() : rawContent.trim();
+		const parsed = JSON.parse(jsonString);
 		return {
 			mainTopic: parsed.mainTopic || "",
 			keywords: parsed.keywords || [],

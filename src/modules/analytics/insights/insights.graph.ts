@@ -84,8 +84,13 @@ const insightGenerationNode = async (state: typeof GraphState.State) => {
 		);
 
 		const rawResponse = response.content as string;
-		const jsonMatch = rawResponse.match(/```(?:json)?\n([\s\S]*?)\n```/);
-		const jsonString = jsonMatch ? jsonMatch[1] : rawResponse;
+		const jsonMatch = rawResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+		let jsonString = jsonMatch && jsonMatch[1] ? jsonMatch[1].trim() : rawResponse.trim();
+		const firstBrace = jsonString.indexOf("{");
+		const lastBrace = jsonString.lastIndexOf("}");
+		if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+			jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+		}
 		insights = JSON.parse(jsonString);
 		generation.end({ output: insights });
 	} catch (error) {

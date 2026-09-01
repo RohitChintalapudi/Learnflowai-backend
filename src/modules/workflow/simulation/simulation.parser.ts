@@ -6,17 +6,24 @@ import type { SimulationEntity, SimulationOutput, SimulationStep } from "./simul
 export function extractJsonString(text: string): string {
 	if (typeof text !== "string") return "";
 
-	// 1. Try to extract from triple backtick block (e.g. ```json ... ``` or ``` ... ```)
-	const markdownBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-	if (markdownBlockMatch && markdownBlockMatch[1]) {
-		return markdownBlockMatch[1].trim();
-	}
-
-	// 2. Try to find the first '{' and the last '}'
+	// 1. Try to find the outermost object boundaries { ... }
 	const firstBrace = text.indexOf("{");
 	const lastBrace = text.lastIndexOf("}");
 	if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
 		return text.substring(firstBrace, lastBrace + 1).trim();
+	}
+
+	// 2. Try to find the outermost array boundaries [ ... ]
+	const firstBracket = text.indexOf("[");
+	const lastBracket = text.lastIndexOf("]");
+	if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+		return text.substring(firstBracket, lastBracket + 1).trim();
+	}
+
+	// 3. Fallback to markdown block
+	const markdownBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+	if (markdownBlockMatch && markdownBlockMatch[1]) {
+		return markdownBlockMatch[1].trim();
 	}
 
 	return text.trim();

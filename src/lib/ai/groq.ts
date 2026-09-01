@@ -3,19 +3,19 @@ import type { BaseMessage } from "@langchain/core/messages";
 import { env } from "../../config/env";
 
 const MODEL_MAPPING: Record<string, string> = {
-	"llama-3.1-8b-instant": "groq/compound-mini",
+	"llama-3.1-8b-instant": "openai/gpt-oss-20b",
 	"llama-3.3-70b-versatile": "openai/gpt-oss-120b",
 	"llama3-70b-8192": "openai/gpt-oss-120b",
-	"llama3-8b-8192": "groq/compound-mini",
+	"llama3-8b-8192": "openai/gpt-oss-20b",
 	"mixtral-8x7b-32768": "openai/gpt-oss-120b",
-	"gemma2-9b-it": "groq/compound-mini",
+	"gemma2-9b-it": "openai/gpt-oss-20b",
 };
 
 const DEFAULT_FALLBACK_POOL = [
-	"groq/compound-mini",
 	"openai/gpt-oss-120b",
 	"qwen/qwen3.8-27b",
 	"openai/gpt-oss-20b",
+	"groq/compound-mini",
 ];
 
 export interface GroqClientOptions {

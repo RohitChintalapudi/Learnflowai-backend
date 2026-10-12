@@ -28,6 +28,7 @@ import simulationRoute from "./modules/workflow/simulation/simulation.route";
 import documentRouter from "./routes/document.routes";
 
 import alertsRoute from "./modules/alerts/alerts.route";
+import feedbackRoute from "./modules/feedback/feedback.route";
 
 const app: Express = express();
 
@@ -78,6 +79,7 @@ app.use("/api/settings/delete-account", deleteAccountRoute);
 app.use("/api/settings/change-password", changePasswordRoute);
 app.use("/api/analytics", analyticsRoute);
 app.use("/api/alerts", alertsRoute);
+app.use("/api/feedback", feedbackRoute);
 
 app.get("/", (req, res) => {
 	const host = req.get("host")?.split(":")[0] || "localhost";

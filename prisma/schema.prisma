@@ -33,6 +33,7 @@ model User {
   analyticsEvents       AnalyticsEvent[]
   userTopics            UserTopic[]
   alerts                Alert[]
+  feedbacks             Feedback[]
 
   @@map("users")
 }
@@ -291,3 +292,15 @@ model Alert {
   @@map("alerts")
 }
 
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedbacks")
+}

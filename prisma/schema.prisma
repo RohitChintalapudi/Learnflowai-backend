@@ -17,6 +17,10 @@ model User {
   profileImage  String?
   bio           String?   @db.VarChar(300)
   learningGoals String?   @db.VarChar(500)
+  plan             String    @default("free")
+  planInterval     String?
+  planStartedAt    DateTime?
+  planExpiresAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
